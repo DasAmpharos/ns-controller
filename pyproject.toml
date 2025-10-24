@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "ns-controller"
+version = "0.1.0"
+description = ""
+authors = ["Dylan Meadows <dylmeadows@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.120.0"
+loguru = "^0.7.3"
+click = "^8.3.0"
+
+[tool.poetry.scripts]
+ns-controller = "ns_controller.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

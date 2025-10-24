@@ -1,54 +1,51 @@
-import logging
 import threading
 import time
-from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Final
 
+from loguru import logger
+from pydantic import BaseModel, Field
+
+
+class ControllerState(BaseModel):
+    class Buttons(BaseModel):
+        a: bool = False
+        b: bool = False
+        x: bool = False
+        y: bool = False
+        # shoulders
+        l: bool = False
+        r: bool = False
+        # triggers
+        zl: bool = False
+        zr: bool = False
+
+        minus: bool = False
+        plus: bool = False
+        home: bool = False
+        capture: bool = False
+
+    class DPad(BaseModel):
+        up: bool = False
+        down: bool = False
+        left: bool = False
+        right: bool = False
+
+    class Sticks(BaseModel):
+        class Axis(BaseModel):
+            x: int = 0
+            y: int = 0
+            pressed: bool = False
+
+        ls: Axis = Field(default_factory=Axis)
+        rs: Axis = Field(default_factory=Axis)
+
+    buttons: Buttons = Field(default_factory=Buttons)
+    sticks: Sticks = Field(default_factory=Sticks)
+    dpad: DPad = Field(default_factory=DPad)
+
 
 class NsController:
-    @dataclass
-    class InputStruct:
-        @dataclass
-        class ButtonStruct:
-            a: bool = False
-            b: bool = False
-            x: bool = False
-            y: bool = False
-            # shoulders
-            l: bool = False
-            r: bool = False
-            # triggers
-            zl: bool = False
-            zr: bool = False
-
-            minus: bool = False
-            plus: bool = False
-            home: bool = False
-            capture: bool = False
-
-        @dataclass
-        class StickStruct:
-            @dataclass
-            class Axis:
-                x: int = 0
-                y: int = 0
-                pressed: bool = False
-
-            left: Axis = field(default_factory=Axis)
-            right: Axis = field(default_factory=Axis)
-
-        @dataclass
-        class DpadStruct:
-            up: bool = False
-            down: bool = False
-            left: bool = False
-            right: bool = False
-
-        buttons: ButtonStruct = field(default_factory=ButtonStruct)
-        sticks: StickStruct = field(default_factory=StickStruct)
-        dpad: DpadStruct = field(default_factory=DpadStruct)
-
     SPI_ROM_DATA: Final = MappingProxyType({
         0x60: bytes([
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -72,8 +69,7 @@ class NsController:
     })
 
     def __init__(self):
-        self.logger: Final = logging.getLogger(self.__class__.__name__)
-        self.inputs = self.InputStruct()
+        self.state = ControllerState()
 
         self.fp = None
         self.stop_communicate: Final = threading.Event()
@@ -97,12 +93,12 @@ class NsController:
         self.write(0x81, 0x03, bytes([]))
         self.write(0x81, 0x01, bytes([0x00, 0x03]))
 
-        def run_communication_thread():
+        def run_comm_thread():
             buf = bytearray(128)
 
             while not self.stop_communicate.is_set():
                 n = self.fp.readinto(buf)
-                self.logger.info("read: %s %s", buf[:n].hex(), None)
+                logger.info("read: %s %s", buf[:n].hex(), None)
 
                 match buf[0]:
                     case 0x80:
@@ -136,33 +132,33 @@ class NsController:
                                 data = self.SPI_ROM_DATA.get(buf[12], None)
                                 if data:
                                     self.uart(True, buf[10], buf[11:16] + data[buf[11]:buf[11] + buf[15]])
-                                    self.logger.info("Read SPI address: %02x%02x[%d] %s", buf[12], buf[11], buf[15],
-                                                     data[buf[11]:buf[11] + buf[15]])
+                                    logger.info("Read SPI address: %02x%02x[%d] %s", buf[12], buf[11], buf[15],
+                                                data[buf[11]:buf[11] + buf[15]])
                                 else:
                                     self.uart(False, buf[10], bytes([]))
-                                    self.logger.info("Unknown SPI address: %02x[%d]", buf[12], buf[15])
+                                    logger.info("Unknown SPI address: %02x[%d]", buf[12], buf[15])
                             case 0x21:
                                 self.uart(True, buf[10], bytes([
                                     0x01, 0x00, 0xff, 0x00, 0x03, 0x00, 0x05, 0x01
                                 ]))
                             case _:
-                                self.logger.info("UART unknown request %s %s", buf[10], buf)
+                                logger.info("UART unknown request %s %s", buf[10], buf)
                         break
                     case 0x00 | 0x10:
                         pass
                     case _:
-                        logging.info("unknown request %s", buf[0])
+                        logger.info("unknown request %s", buf[0])
 
-        communication_thread = threading.Thread(target=run_communication_thread, daemon=True)
-        communication_thread.start()
+        comm_thread = threading.Thread(target=run_comm_thread, daemon=True)
+        comm_thread.start()
 
     def write(self, ack: int, cmd: int, buf: bytes):
         data = bytes([ack, cmd]) + buf + bytes(62 - len(buf))
         self.fp.write(data)
 
-        self.logger.info("write: %s", data.hex())
+        logger.info("write: %s", data.hex())
         if ack == 0x30:
-            self.logger.info("input report: %s", self.get_input_buffer().hex())
+            logger.info("input report: %s", self.get_input_buffer().hex())
 
     def start_counter(self):
         def run_counter():
@@ -194,49 +190,49 @@ class NsController:
         self.write(0x21, self.count, combined_data)
 
     def get_input_buffer(self) -> bytes:
-        left = (self.bit_input(self.inputs.buttons.y, 0) |
-                self.bit_input(self.inputs.buttons.x, 1) |
-                self.bit_input(self.inputs.buttons.b, 2) |
-                self.bit_input(self.inputs.buttons.a, 3) |
-                self.bit_input(self.inputs.buttons.r, 6) |
-                self.bit_input(self.inputs.buttons.zr, 7))
+        def bit(position: int, condition: bool) -> int:
+            return (1 << position) if condition else 0
 
-        center = (self.bit_input(self.inputs.buttons.minus, 0) |
-                  self.bit_input(self.inputs.buttons.plus, 1) |
-                  self.bit_input(self.inputs.sticks.right.pressed, 2) |
-                  self.bit_input(self.inputs.sticks.left.pressed, 3) |
-                  self.bit_input(self.inputs.buttons.home, 4) |
-                  self.bit_input(self.inputs.buttons.capture, 5))
+        def pack_shorts(x: int, y: int) -> tuple[int, int, int, int]:
+            return (x & 0xFF), (x >> 8), (y & 0xFF), (y >> 8)
 
-        right = (self.bit_input(self.inputs.dpad.down, 0) |
-                 self.bit_input(self.inputs.dpad.up, 1) |
-                 self.bit_input(self.inputs.dpad.right, 2) |
-                 self.bit_input(self.inputs.dpad.left, 3) |
-                 self.bit_input(self.inputs.buttons.l, 6) |
-                 self.bit_input(self.inputs.buttons.zl, 7))
-
-        lx = int(round((1 + self.inputs.sticks.left.x) * 2047.5))
-        ly = int(round((1 + self.inputs.sticks.left.y) * 2047.5))
-        rx = int(round((1 + self.inputs.sticks.right.x) * 2047.5))
-        ry = int(round((1 + self.inputs.sticks.right.x) * 2047.5))
-
-        left_stick = self.pack_shorts(lx, ly)
-        right_stick = self.pack_shorts(rx, ry)
-
-        return bytes([0x81, left, center, right, left_stick[0], left_stick[1],
-                      left_stick[2], right_stick[0], right_stick[1], right_stick[2], 0x00])
-
-    @staticmethod
-    def bit_input(condition, position) -> int:
-        return (1 << position) if condition else 0
-
-    @staticmethod
-    def pack_shorts(x, y):
-        return [(x & 0xFF), (x >> 8), (y & 0xFF), (y >> 8)]
+        rhs = (
+            bit(0, self.state.buttons.y) |
+            bit(1, self.state.buttons.x) |
+            bit(2, self.state.buttons.b) |
+            bit(3, self.state.buttons.a) |
+            bit(6, self.state.buttons.r) |
+            bit(7, self.state.buttons.zr)
+        )
+        center = (
+            bit(0, self.state.buttons.minus) |
+            bit(1, self.state.buttons.plus) |
+            bit(2, self.state.sticks.rs.pressed) |
+            bit(3, self.state.sticks.ls.pressed) |
+            bit(4, self.state.buttons.home) |
+            bit(5, self.state.buttons.capture)
+        )
+        lhs = (
+            bit(0, self.state.dpad.down) |
+            bit(1, self.state.dpad.up) |
+            bit(2, self.state.dpad.right) |
+            bit(3, self.state.dpad.left) |
+            bit(6, self.state.buttons.l) |
+            bit(7, self.state.buttons.zl)
+        )
+        ls = pack_shorts(
+            int(round((1 + self.state.sticks.ls.x) * 2047.5)),
+            int(round((1 + self.state.sticks.ls.y) * 2047.5))
+        )
+        rs = pack_shorts(
+            int(round((1 + self.state.sticks.rs.x) * 2047.5)),
+            int(round((1 + self.state.sticks.rs.x) * 2047.5))
+        )
+        return bytes([0x81, rhs, center, lhs, ls[0], ls[1], ls[2], rs[0], rs[1], rs[2], 0x00])
 
     def close(self):
         if self.fp is None:
-            logging.info("Already closed")
+            logger.info("Already closed")
             return
         self.stop_counter.set()
         self.stop_communicate.set()
