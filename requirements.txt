@@ -1,4 +1,4 @@
-click==8.3.0 ; python_version >= "3.13" and python_version < "4.0"
-colorama==0.4.6 ; python_version >= "3.13" and python_version < "4.0" and (platform_system == "Windows" or sys_platform == "win32")
-loguru==0.7.3 ; python_version >= "3.13" and python_version < "4.0"
-win32-setctime==1.2.0 ; python_version >= "3.13" and python_version < "4.0" and sys_platform == "win32"
+click==8.1.7
+loguru==0.7.3
+streamlit==1.50.1
+

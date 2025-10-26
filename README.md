@@ -103,6 +103,32 @@ The Streamlit UI provides:
 - Macro management (save, load, delete)
 - Macro execution controls (start, stop, pause, resume)
 
+### Example Client Scripts
+
+Two example scripts are provided to demonstrate how to control the Switch from another computer:
+
+**Using the ns_controller package:**
+```bash
+# Activate venv if running locally
+source .venv/bin/activate
+
+# Run the example (demonstrates button presses and macros)
+python example_client.py --host raspberrypi.local --port 9000
+```
+
+**Standalone (no dependencies):**
+```bash
+# Run the simple client (just needs Python's socket library)
+python simple_client.py --host raspberrypi.local --port 9000
+```
+
+Both scripts demonstrate:
+- Connecting to the Raspberry Pi
+- Pressing individual buttons
+- Pressing multiple buttons simultaneously
+- Using D-Pad navigation
+- Running macros (example_client.py only)
+
 ## Development
 
 - All source code is in `ns_controller/`.

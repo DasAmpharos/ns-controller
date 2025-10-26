@@ -1,6 +1,6 @@
 import asyncio
 import functools
-from dataclasses import Field, dataclass
+from dataclasses import Field, dataclass, field
 from enum import IntEnum
 from pathlib import Path
 from types import MappingProxyType
@@ -39,8 +39,8 @@ class StickPosition:
 @dataclass
 class ControllerState:
     buttons: int = 0  # Bitmask for buttons
-    ls: StickPosition = Field(default_factory=StickPosition)
-    rs: StickPosition = Field(default_factory=StickPosition)
+    ls: StickPosition = field(default_factory=StickPosition)
+    rs: StickPosition = field(default_factory=StickPosition)
 
     def set_button(self, button: Buttons, pressed: bool):
         if pressed:
