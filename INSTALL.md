@@ -38,7 +38,7 @@ This guide will help you install and configure the NS-Controller on your Raspber
 
 The `install.sh` script performs the following actions:
 
-1. **Installs system dependencies**: Python 3, pip, venv, git
+1. **Installs system dependencies**: Python 3 (full), venv, git, curl
 2. **Configures USB gadget mode**: 
    - Adds `dtoverlay=dwc2` to `/boot/config.txt`
    - Adds required modules to `/etc/modules`
@@ -47,7 +47,9 @@ The `install.sh` script performs the following actions:
    - Creates `/dev/hidg0` for controller communication
 4. **Creates USB gadget systemd service**: Automatically sets up USB gadget on boot
 5. **Installs the application**: Copies files to `/opt/ns-controller`
-6. **Installs Python dependencies**: Uses Poetry to install required packages
+6. **Installs Python dependencies**: 
+   - Installs Poetry using the official installer (works with externally managed environments)
+   - Creates a virtual environment and installs required packages
 7. **Creates ns-controller systemd service**: Runs the server automatically on startup
 
 ## Manual Installation
@@ -84,17 +86,27 @@ Copy the USB gadget setup script from the install script or create your own base
 ### 3. Install Python Dependencies
 
 ```bash
-# Install Poetry
-pip3 install --user poetry
+# Install Poetry using the official installer
+# This works with externally managed Python environments
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Add Poetry to PATH for current session
+export PATH="$HOME/.local/bin:$PATH"
 
 # Install project dependencies
 cd ns-controller
 poetry install
 ```
 
+**Note**: Raspberry Pi OS uses an externally managed Python environment. The Poetry installer creates an isolated environment that works around this restriction. Do not use `pip install poetry` as it will fail with an externally-managed-environment error.
+
 ### 4. Run the Server
 
 ```bash
+# Make sure Poetry is in PATH
+export PATH="$HOME/.local/bin:$PATH"
+
+# Run the server
 poetry run ns-controller --host 0.0.0.0 --port 9000
 ```
 
@@ -163,6 +175,7 @@ ls -la /dev/hidg0
 Try running manually to see errors:
 ```bash
 cd /opt/ns-controller
+export PATH="$HOME/.local/bin:$PATH"
 poetry run ns-controller
 ```
 
@@ -240,6 +253,7 @@ For testing without a physical connection to the Switch:
 ```bash
 sudo systemctl stop ns-controller
 cd /opt/ns-controller
+export PATH="$HOME/.local/bin:$PATH"
 poetry run ns-controller --mock
 ```
 

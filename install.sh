@@ -33,7 +33,7 @@ echo ""
 # 1. Install system dependencies
 echo "[1/7] Installing system dependencies..."
 apt-get update
-apt-get install -y python3-pip python3-venv git
+apt-get install -y python3-full python3-venv git curl
 
 # 2. Enable dwc2 overlay for USB gadget mode
 echo "[2/7] Configuring USB gadget mode..."
@@ -161,25 +161,35 @@ chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
 # 6. Install Python dependencies
 echo "[6/7] Installing Python dependencies..."
 cd "$INSTALL_DIR"
-sudo -u "$SERVICE_USER" bash << EOF
-# Install poetry if not already installed
-if ! command -v poetry &> /dev/null; then
-    pip3 install --user poetry
-    export PATH="\$HOME/.local/bin:\$PATH"
+
+# Install poetry using the official installer (works with externally managed environments)
+if ! sudo -u "$SERVICE_USER" bash -c 'command -v poetry &> /dev/null'; then
+    echo "  Installing Poetry..."
+    sudo -u "$SERVICE_USER" bash << 'EOF'
+curl -sSL https://install.python-poetry.org | python3 -
+EOF
 fi
 
-# Install project dependencies
-poetry install --no-dev
+# Install project dependencies using Poetry
+sudo -u "$SERVICE_USER" bash << 'EOF'
+export PATH="$HOME/.local/bin:$PATH"
+cd /opt/ns-controller
+poetry install --no-dev --no-interaction
 EOF
 
 # Get the poetry virtual environment path
-VENV_PATH=$(sudo -u "$SERVICE_USER" bash -c "cd $INSTALL_DIR && poetry env info -p")
+VENV_PATH=$(sudo -u "$SERVICE_USER" bash -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && cd $INSTALL_DIR && poetry env info -p")
 PYTHON_PATH="$VENV_PATH/bin/python"
 
 echo "  Virtual environment: $VENV_PATH"
+echo "  Python path: $PYTHON_PATH"
 
 # 7. Create systemd service for ns-controller
 echo "[7/7] Creating ns-controller systemd service..."
+
+# Get user's home directory for poetry path
+USER_HOME=$(eval echo ~$SERVICE_USER)
+
 cat > /etc/systemd/system/ns-controller.service << EOF
 [Unit]
 Description=Nintendo Switch Controller Server
@@ -190,7 +200,8 @@ Requires=usb-gadget.service
 Type=simple
 User=$SERVICE_USER
 WorkingDirectory=$INSTALL_DIR
-ExecStart=$PYTHON_PATH -m ns_controller.cli --host 0.0.0.0 --port 9000
+Environment="PATH=$USER_HOME/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=$USER_HOME/.local/bin/poetry run python -m ns_controller.cli --host 0.0.0.0 --port 9000
 Restart=always
 RestartSec=10
 StandardOutput=journal
