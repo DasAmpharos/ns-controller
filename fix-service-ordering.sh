@@ -40,22 +40,40 @@ echo "✓ Reloaded systemd"
 systemctl enable usb-gadget.service
 echo "✓ Enabled usb-gadget.service"
 
-# Show status
+# Start the service now to test
 echo ""
-echo "Current status:"
+echo "Starting usb-gadget.service..."
+systemctl start usb-gadget.service
+
+echo ""
+echo "Service status:"
 systemctl status usb-gadget.service --no-pager || true
 
 echo ""
-echo "=========================================="
-echo "Fix Applied!"
-echo "=========================================="
-echo ""
-echo "The ordering cycle has been fixed."
-echo ""
-echo "Options:"
-echo "  1. Reboot to apply changes: sudo reboot"
-echo "  2. Or start the service manually now: sudo systemctl start usb-gadget.service"
-echo ""
-echo "After starting, check /dev/hidg0: ls -la /dev/hidg0"
+echo "Checking for /dev/hidg0..."
+if [ -e /dev/hidg0 ]; then
+    ls -la /dev/hidg0
+    echo ""
+    echo "=========================================="
+    echo "✓✓✓ SUCCESS! ✓✓✓"
+    echo "=========================================="
+    echo ""
+    echo "/dev/hidg0 has been created!"
+    echo "Your Raspberry Pi is now configured as a Nintendo Switch Pro Controller."
+    echo ""
+    echo "The service will start automatically on boot."
+else
+    echo "/dev/hidg0 not found"
+    echo ""
+    echo "Checking logs for errors..."
+    journalctl -u usb-gadget.service -n 20 --no-pager
+    echo ""
+    echo "=========================================="
+    echo "Service started but /dev/hidg0 not created"
+    echo "=========================================="
+    echo ""
+    echo "Try running the setup script manually to see errors:"
+    echo "  sudo /usr/local/bin/setup-usb-gadget.sh"
+fi
 echo ""
 

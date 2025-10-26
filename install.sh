@@ -191,6 +191,18 @@ systemctl daemon-reload
 systemctl enable usb-gadget.service
 echo "  Created and enabled usb-gadget.service"
 
+# Start the service immediately to create /dev/hidg0
+echo "  Starting usb-gadget service..."
+systemctl start usb-gadget.service
+
+# Verify /dev/hidg0 was created
+sleep 1
+if [ -e /dev/hidg0 ]; then
+    echo "  ✓ /dev/hidg0 created successfully"
+else
+    echo "  ⚠ Warning: /dev/hidg0 not created. Check 'systemctl status usb-gadget.service' after installation."
+fi
+
 # 5. Copy project files
 echo "[5/7] Installing ns-controller application..."
 mkdir -p "$INSTALL_DIR"
