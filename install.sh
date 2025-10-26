@@ -30,10 +30,33 @@ echo "Installing to: $INSTALL_DIR"
 echo "Running as user: $SERVICE_USER"
 echo ""
 
+# Check available disk space (require at least 500MB free)
+echo "Checking disk space..."
+AVAILABLE_SPACE=$(df / | tail -1 | awk '{print $4}')
+REQUIRED_SPACE=512000  # 500MB in KB
+
+if [ "$AVAILABLE_SPACE" -lt "$REQUIRED_SPACE" ]; then
+    echo "Error: Not enough disk space available"
+    echo "Available: $(($AVAILABLE_SPACE / 1024))MB"
+    echo "Required: $(($REQUIRED_SPACE / 1024))MB"
+    echo ""
+    echo "Free up space by:"
+    echo "  - Removing unused packages: sudo apt autoremove"
+    echo "  - Cleaning apt cache: sudo apt clean"
+    echo "  - Removing old logs: sudo journalctl --vacuum-time=7d"
+    exit 1
+fi
+echo "Available disk space: $(($AVAILABLE_SPACE / 1024))MB"
+echo ""
+
 # 1. Install system dependencies
 echo "[1/7] Installing system dependencies..."
 apt-get update
-apt-get install -y python3-full python3-venv git curl
+apt-get install -y python3-full python3-venv git curl libffi-dev build-essential pipx
+pipx ensurepath
+# Clean up to save space
+apt-get clean
+echo "  Cleaned apt cache to free up space"
 
 # 2. Enable dwc2 overlay for USB gadget mode
 echo "[2/7] Configuring USB gadget mode..."
@@ -166,7 +189,7 @@ cd "$INSTALL_DIR"
 if ! sudo -u "$SERVICE_USER" bash -c 'command -v poetry &> /dev/null'; then
     echo "  Installing Poetry..."
     sudo -u "$SERVICE_USER" bash << 'EOF'
-curl -sSL https://install.python-poetry.org | python3 -
+pipx install poetry
 EOF
 fi
 

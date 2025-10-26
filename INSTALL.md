@@ -6,8 +6,21 @@ This guide will help you install and configure the NS-Controller on your Raspber
 
 - Raspberry Pi Zero W, Zero 2 W, or Pi 4 (models with USB OTG support)
 - Raspberry Pi OS (Bookworm or later recommended)
-- MicroSD card with at least 8GB
+- MicroSD card with at least 8GB (16GB recommended)
+- At least 500MB free disk space for installation
 - USB cable to connect Pi to Nintendo Switch
+
+**Note**: If you're running low on disk space, free up space before installation:
+```bash
+# Remove unused packages
+sudo apt autoremove -y
+
+# Clean apt cache
+sudo apt clean
+
+# Clean old logs (keep last 7 days)
+sudo journalctl --vacuum-time=7d
+```
 
 ## Quick Installation
 
@@ -38,19 +51,20 @@ This guide will help you install and configure the NS-Controller on your Raspber
 
 The `install.sh` script performs the following actions:
 
-1. **Installs system dependencies**: Python 3 (full), venv, git, curl
-2. **Configures USB gadget mode**: 
+1. **Checks disk space**: Ensures at least 500MB is available
+2. **Installs system dependencies**: Python 3 (full), venv, git, curl, libffi-dev, build-essential
+3. **Configures USB gadget mode**: 
    - Adds `dtoverlay=dwc2` to `/boot/config.txt`
    - Adds required modules to `/etc/modules`
-3. **Creates USB gadget setup script**: `/usr/local/bin/setup-usb-gadget.sh`
+4. **Creates USB gadget setup script**: `/usr/local/bin/setup-usb-gadget.sh`
    - Configures the Pi as a Nintendo Switch Pro Controller USB HID device
    - Creates `/dev/hidg0` for controller communication
-4. **Creates USB gadget systemd service**: Automatically sets up USB gadget on boot
-5. **Installs the application**: Copies files to `/opt/ns-controller`
-6. **Installs Python dependencies**: 
+5. **Creates USB gadget systemd service**: Automatically sets up USB gadget on boot
+6. **Installs the application**: Copies files to `/opt/ns-controller`
+7. **Installs Python dependencies**: 
    - Installs Poetry using the official installer (works with externally managed environments)
    - Creates a virtual environment and installs required packages
-7. **Creates ns-controller systemd service**: Runs the server automatically on startup
+8. **Creates ns-controller systemd service**: Runs the server automatically on startup
 
 ## Manual Installation
 
@@ -142,6 +156,50 @@ sudo systemctl enable ns-controller
 ```
 
 ## Troubleshooting
+
+### Installation Fails with "No space left on device"
+
+Free up disk space:
+```bash
+# Remove unused packages
+sudo apt autoremove -y
+
+# Clean apt cache
+sudo apt clean
+
+# Remove old logs (keep last 7 days)
+sudo journalctl --vacuum-time=7d
+
+# Check available space
+df -h /
+```
+
+After freeing up space, run the install script again.
+
+### Installation Fails with "Package libffi was not found"
+
+This should be fixed by the install script, but if you see this error:
+```bash
+sudo apt-get update
+sudo apt-get install -y libffi-dev build-essential
+```
+
+Then run the install script again.
+
+### Poetry Installation Fails
+
+If Poetry installation fails, you can try installing it manually:
+```bash
+# Remove any partial installation
+rm -rf ~/.local/share/pypoetry ~/.local/bin/poetry
+
+# Install Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Verify installation
+export PATH="$HOME/.local/bin:$PATH"
+poetry --version
+```
 
 ### USB Gadget Not Working
 

@@ -11,33 +11,40 @@
    ssh pi@raspberrypi.local
    ```
 
-3. **Update the system**:
+3. **Update the system and free up space**:
    ```bash
    sudo apt update && sudo apt upgrade -y
+   sudo apt autoremove -y
+   sudo apt clean
    ```
 
-4. **Clone this repository**:
+4. **Check available disk space** (need at least 500MB):
+   ```bash
+   df -h /
+   ```
+
+5. **Clone this repository**:
    ```bash
    git clone <repository-url> ns-controller
    cd ns-controller
    ```
 
-5. **Run the installation script**:
+6. **Run the installation script**:
    ```bash
    chmod +x install.sh
    sudo ./install.sh
    ```
 
-6. **Reboot**:
+7. **Reboot**:
    ```bash
    sudo reboot
    ```
 
-7. **Connect to Nintendo Switch**:
+8. **Connect to Nintendo Switch**:
    - Use a USB cable to connect your Pi to the Switch
    - The Switch should recognize it as a Pro Controller
 
-8. **Access the UI**:
+9. **Access the UI**:
    - From any device on your network, open a browser
    - Navigate to: `http://raspberrypi.local:8501`
    - Or use the Pi's IP address: `http://<pi-ip>:8501`
@@ -167,6 +174,20 @@ sudo systemctl start ns-controller
 ```
 
 ## Troubleshooting
+
+### Installation fails with "No space left on device"
+```bash
+# Free up space
+sudo apt autoremove -y
+sudo apt clean
+sudo journalctl --vacuum-time=7d
+
+# Check available space (need 500MB+)
+df -h /
+
+# Try installation again
+sudo ./install.sh
+```
 
 ### Service won't start
 ```bash
