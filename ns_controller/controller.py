@@ -1,6 +1,6 @@
 import asyncio
 import functools
-from dataclasses import Field, dataclass, field
+from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
 from types import MappingProxyType
@@ -118,7 +118,7 @@ class Controller:
             while not self.stop_comms.is_set():
                 event_loop = asyncio.get_event_loop()
                 n = await event_loop.run_in_executor(None, self.fp.readinto, buf)
-                logger.info("read: %s %s", buf[:n].hex(), None)
+                logger.info(f"read: {buf[:n].hex()}")
 
                 match buf[0]:
                     case 0x01:
@@ -128,7 +128,7 @@ class Controller:
                     case 0x00 | 0x10:
                         self.handle_noop(buf)
                     case _:
-                        logger.info("unknown request %s", buf[0])
+                        logger.info(f"unknown request 0x{buf[0]:02x}")
 
         task = asyncio.create_task(run_comms())
         self.tasks.append(task)
@@ -156,19 +156,15 @@ class Controller:
                 if data:
                     self.uart(True, buf[10], buf[11:16] + data[buf[11] : buf[11] + buf[15]])
                     logger.info(
-                        "Read SPI address: %02x%02x[%d] %s",
-                        buf[12],
-                        buf[11],
-                        buf[15],
-                        data[buf[11] : buf[11] + buf[15]],
+                        f"Read SPI address: {buf[12]:02x}{buf[11]:02x}[{buf[15]}] {data[buf[11] : buf[11] + buf[15]]}"
                     )
                 else:
                     self.uart(False, buf[10], bytes([]))
-                    logger.info("Unknown SPI address: %02x[%d]", buf[12], buf[15])
+                    logger.info(f"Unknown SPI address: {buf[12]:02x}[{buf[15]}]")
             case 0x21:
                 self.uart(True, buf[10], bytes([0x01, 0x00, 0xFF, 0x00, 0x03, 0x00, 0x05, 0x01]))
             case _:
-                logger.info("UART unknown request %s %s", buf[10], buf)
+                logger.info(f"UART unknown request 0x{buf[10]:02x}: {buf.hex()}")
 
     async def handle_0x80(self, buf: bytearray):
         match buf[1]:
@@ -182,15 +178,15 @@ class Controller:
                 self.stop_input.set()
                 self.stop_input.clear()
             case _:
-                logger.info("Unknown 0x80 subcommand: %s", buf[1])
+                logger.info(f"Unknown 0x80 subcommand: 0x{buf[1]:02x}")
 
     def write(self, ack: int, cmd: int, buf: bytes):
         data = bytes([ack, cmd]) + buf + bytes(62 - len(buf))
         self.fp.write(data)
 
-        logger.info("write: %s", data.hex())
+        logger.info(f"write: {data.hex()}")
         if ack == 0x30:
-            logger.info("input report: %s", self.get_input_buffer().hex())
+            logger.info(f"input report: {self.get_input_buffer().hex()}")
 
     def uart(self, ack: bool, sub_cmd: int, data: bytes):
         ack_byte = 0x00

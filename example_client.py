@@ -48,9 +48,10 @@ def main():
         print()
 
         # Example 1: Press A button
-        print("[2/6] Pressing A button...")
+        print("[2/6] Pressing L+R button...")
         state = ControllerState()
-        state.set_button(Buttons.A, True)
+        state.set_button(Buttons.L, True)
+        state.set_button(Buttons.R, True)
         client.send_state(state, down=0.1, up=0.1)
         print("  ✓ A button pressed for 0.1s")
         time.sleep(0.5)
