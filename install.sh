@@ -52,8 +52,7 @@ echo ""
 # 1. Install system dependencies
 echo "[1/7] Installing system dependencies..."
 apt-get update
-apt-get install -y python3-full python3-venv git curl libffi-dev build-essential pipx
-pipx ensurepath
+apt-get install -y python3-full python3-venv
 # Clean up to save space
 apt-get clean
 echo "  Cleaned apt cache to free up space"
@@ -185,23 +184,19 @@ chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
 echo "[6/7] Installing Python dependencies..."
 cd "$INSTALL_DIR"
 
-# Install poetry using the official installer (works with externally managed environments)
-if ! sudo -u "$SERVICE_USER" bash -c 'command -v poetry &> /dev/null'; then
-    echo "  Installing Poetry..."
-    sudo -u "$SERVICE_USER" bash << 'EOF'
-pipx install poetry
-EOF
-fi
+# Create virtual environment
+VENV_PATH="$INSTALL_DIR/.venv"
+echo "  Creating virtual environment..."
+sudo -u "$SERVICE_USER" python3 -m venv "$VENV_PATH"
 
-# Install project dependencies using Poetry
-sudo -u "$SERVICE_USER" bash << 'EOF'
-export PATH="$HOME/.local/bin:$PATH"
-cd /opt/ns-controller
-poetry install --no-dev --no-interaction
+# Install dependencies with pip (no cache to save space)
+echo "  Installing packages (this may take a few minutes)..."
+sudo -u "$SERVICE_USER" bash << EOF
+source "$VENV_PATH/bin/activate"
+pip install --no-cache-dir -r "$INSTALL_DIR/requirements.txt"
+deactivate
 EOF
 
-# Get the poetry virtual environment path
-VENV_PATH=$(sudo -u "$SERVICE_USER" bash -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && cd $INSTALL_DIR && poetry env info -p")
 PYTHON_PATH="$VENV_PATH/bin/python"
 
 echo "  Virtual environment: $VENV_PATH"
@@ -209,9 +204,6 @@ echo "  Python path: $PYTHON_PATH"
 
 # 7. Create systemd service for ns-controller
 echo "[7/7] Creating ns-controller systemd service..."
-
-# Get user's home directory for poetry path
-USER_HOME=$(eval echo ~$SERVICE_USER)
 
 cat > /etc/systemd/system/ns-controller.service << EOF
 [Unit]
@@ -223,8 +215,7 @@ Requires=usb-gadget.service
 Type=simple
 User=$SERVICE_USER
 WorkingDirectory=$INSTALL_DIR
-Environment="PATH=$USER_HOME/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=$USER_HOME/.local/bin/poetry run python -m ns_controller.cli --host 0.0.0.0 --port 9000
+ExecStart=$PYTHON_PATH -m ns_controller.cli --host 0.0.0.0 --port 9000
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -243,6 +234,7 @@ EOF
 
 systemctl daemon-reload
 systemctl enable ns-controller.service
+echo "  Created and enabled ns-controller.service"
 echo "  Created and enabled ns-controller.service"
 
 echo ""

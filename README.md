@@ -37,15 +37,21 @@ See [INSTALL.md](INSTALL.md) for detailed installation instructions, troubleshoo
 
 ### Manual/Development Installation
 
-This project uses [Poetry](https://python-poetry.org/) for dependency management.
+This project uses pip and virtual environments for dependency management.
 
 ```bash
 # Clone the repository
 git clone <repo-url> ns-controller
 cd ns-controller
 
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate virtual environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
 # Install dependencies
-poetry install
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -63,7 +69,11 @@ If you used the install script, the service starts automatically on boot. Simply
 Run the server manually:
 
 ```bash
-poetry run ns-controller --filepath /dev/hidg0 --host 0.0.0.0 --port 9000
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run the server
+python -m ns_controller.cli --filepath /dev/hidg0 --host 0.0.0.0 --port 9000
 ```
 
 Options:

@@ -199,8 +199,8 @@ ls -la /dev/hidg0
 
 # Try running manually
 cd /opt/ns-controller
-export PATH="$HOME/.local/bin:$PATH"
-poetry run ns-controller
+source .venv/bin/activate
+python -m ns_controller.cli
 ```
 
 ### Can't access UI

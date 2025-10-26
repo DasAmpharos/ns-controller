@@ -52,7 +52,7 @@ sudo journalctl --vacuum-time=7d
 The `install.sh` script performs the following actions:
 
 1. **Checks disk space**: Ensures at least 500MB is available
-2. **Installs system dependencies**: Python 3 (full), venv, git, curl, libffi-dev, build-essential
+2. **Installs system dependencies**: Python 3 (full), venv, git, libffi-dev, build-essential
 3. **Configures USB gadget mode**: 
    - Adds `dtoverlay=dwc2` to `/boot/config.txt`
    - Adds required modules to `/etc/modules`
@@ -62,8 +62,8 @@ The `install.sh` script performs the following actions:
 5. **Creates USB gadget systemd service**: Automatically sets up USB gadget on boot
 6. **Installs the application**: Copies files to `/opt/ns-controller`
 7. **Installs Python dependencies**: 
-   - Installs Poetry using the official installer (works with externally managed environments)
-   - Creates a virtual environment and installs required packages
+   - Creates a virtual environment at `/opt/ns-controller/.venv`
+   - Installs packages from requirements.txt using pip (with --no-cache-dir to save space)
 8. **Creates ns-controller systemd service**: Runs the server automatically on startup
 
 ## Manual Installation
@@ -100,28 +100,24 @@ Copy the USB gadget setup script from the install script or create your own base
 ### 3. Install Python Dependencies
 
 ```bash
-# Install Poetry using the official installer
-# This works with externally managed Python environments
-curl -sSL https://install.python-poetry.org | python3 -
+# Create virtual environment
+python3 -m venv .venv
 
-# Add Poetry to PATH for current session
-export PATH="$HOME/.local/bin:$PATH"
+# Activate virtual environment
+source .venv/bin/activate
 
-# Install project dependencies
-cd ns-controller
-poetry install
+# Install dependencies
+pip install --no-cache-dir -r requirements.txt
 ```
-
-**Note**: Raspberry Pi OS uses an externally managed Python environment. The Poetry installer creates an isolated environment that works around this restriction. Do not use `pip install poetry` as it will fail with an externally-managed-environment error.
 
 ### 4. Run the Server
 
 ```bash
-# Make sure Poetry is in PATH
-export PATH="$HOME/.local/bin:$PATH"
+# Make sure virtual environment is activated
+source .venv/bin/activate
 
 # Run the server
-poetry run ns-controller --host 0.0.0.0 --port 9000
+python -m ns_controller.cli --host 0.0.0.0 --port 9000
 ```
 
 ## Service Management
@@ -186,21 +182,6 @@ sudo apt-get install -y libffi-dev build-essential
 
 Then run the install script again.
 
-### Poetry Installation Fails
-
-If Poetry installation fails, you can try installing it manually:
-```bash
-# Remove any partial installation
-rm -rf ~/.local/share/pypoetry ~/.local/bin/poetry
-
-# Install Poetry
-curl -sSL https://install.python-poetry.org | python3 -
-
-# Verify installation
-export PATH="$HOME/.local/bin:$PATH"
-poetry --version
-```
-
 ### USB Gadget Not Working
 
 Check if `/dev/hidg0` exists:
@@ -233,8 +214,8 @@ ls -la /dev/hidg0
 Try running manually to see errors:
 ```bash
 cd /opt/ns-controller
-export PATH="$HOME/.local/bin:$PATH"
-poetry run ns-controller
+source .venv/bin/activate
+python -m ns_controller.cli
 ```
 
 ### Can't Access Streamlit UI
@@ -311,8 +292,8 @@ For testing without a physical connection to the Switch:
 ```bash
 sudo systemctl stop ns-controller
 cd /opt/ns-controller
-export PATH="$HOME/.local/bin:$PATH"
-poetry run ns-controller --mock
+source .venv/bin/activate
+python -m ns_controller.cli --mock
 ```
 
 This runs a mock server that simulates the controller without requiring `/dev/hidg0`.
