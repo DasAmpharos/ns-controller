@@ -173,9 +173,10 @@ echo "[4/7] Creating USB gadget systemd service..."
 cat > /etc/systemd/system/usb-gadget.service << 'EOF'
 [Unit]
 Description=Setup Nintendo Switch Pro Controller USB Gadget
-After=network.target
 DefaultDependencies=no
-Before=sysinit.target
+After=sys-kernel-config.mount
+Before=basic.target
+ConditionPathExists=/sys/kernel/config
 
 [Service]
 Type=oneshot
@@ -183,7 +184,7 @@ ExecStart=/usr/local/bin/setup-usb-gadget.sh
 RemainAfterExit=yes
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=basic.target
 EOF
 
 systemctl daemon-reload
@@ -250,7 +251,6 @@ EOF
 
 systemctl daemon-reload
 systemctl enable ns-controller.service
-echo "  Created and enabled ns-controller.service"
 echo "  Created and enabled ns-controller.service"
 
 echo ""
