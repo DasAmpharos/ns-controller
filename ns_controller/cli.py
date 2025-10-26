@@ -1,6 +1,4 @@
 import asyncio
-import subprocess
-from pathlib import Path
 
 import click
 from loguru import logger
@@ -24,39 +22,6 @@ def main(filepath: str, host: str, port: int) -> None:
 
 
 async def amain(filepath: str, host: str, port: int):
-    client_proc = None
-    try:
-        client_proc = start_client()
-        await start_server(filepath, host, port)
-    finally:
-        if client_proc and client_proc.poll() is None:
-            client_proc.terminate()
-            try:
-                client_proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                client_proc.kill()
-                client_proc.wait()
-
-
-def start_client() -> subprocess.Popen[bytes] | None:
-    # Start Streamlit UI as a subprocess
-    try:
-        # Keep stdout/stderr visible for Streamlit since it shows the URL
-        client_proc = subprocess.Popen([
-            # Optimize Streamlit for low-resource environments
-            "streamlit", "run", str(Path(__file__).parent / "client.py"),
-            "--server.headless", "true",  # No browser auto-open
-            "--server.runOnSave", "false",  # Disable file watcher
-            "--browser.gatherUsageStats", "false",  # Disable telemetry
-        ])
-        logger.info(f"Streamlit UI started (PID: {client_proc.pid})")
-        return client_proc
-    except FileNotFoundError:
-        logger.warning("streamlit not found, UI not started")
-        return None
-
-
-async def start_server(filepath: str, host: str, port: int):
     controller = Controller()
     await controller.connect(filepath)
 

@@ -9,7 +9,6 @@ readme = "README.md"
 python = "^3.13"
 click = "^8.3.0"
 pydantic = "^2.12.3"
-streamlit = "^1.50.0"
 loguru = "^0.7.3"
 
 [tool.poetry.scripts]
