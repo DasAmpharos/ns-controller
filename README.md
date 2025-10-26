@@ -1,59 +1,97 @@
-# ns-controller
+nf# ns-controller
 
 A Python library and API for controlling a Nintendo Switch controller via HID. Provides a FastAPI REST interface and CLI for emulating button presses, DPad, and stick movements.
 
 ## Features
-- Control Nintendo Switch controller state from Python
-- REST API for updating controller state
-- Emulate button presses, DPad, and analog stick movements
-- CLI for quick usage
+
+- **USB HID Emulation**: Emulates a Nintendo Switch Pro Controller over USB
+- **Binary TCP Protocol**: Fast and efficient controller state updates
+- **Streamlit Web UI**: Control the Switch from any device on your network
+- **Macro Support**: Write macros using NXBT syntax with loop support
+- **Macro Management**: Save, load, and organize macros via UI or API
+- **Asyncio-based**: High performance, non-blocking server architecture
+- **Auto-start Service**: Runs automatically on Raspberry Pi boot
+- **Mock Mode**: Test without hardware for development
 
 ## Installation
 
+### Raspberry Pi (Recommended)
+
+For Raspberry Pi installation with automatic USB gadget setup and systemd service:
+
+```bash
+# Clone the repository
+git clone <repo-url> ns-controller
+cd ns-controller
+
+# Run the install script
+sudo ./install.sh
+
+# Reboot
+sudo reboot
+```
+
+After reboot, the controller will be ready to use. Access the Streamlit UI at `http://<pi-ip>:8501`
+
+See [INSTALL.md](INSTALL.md) for detailed installation instructions, troubleshooting, and configuration options.
+
+### Manual/Development Installation
+
 This project uses [Poetry](https://python-poetry.org/) for dependency management.
 
-```fish
+```bash
 # Clone the repository
-$ git clone <repo-url>
-$ cd ns-controller-python
+git clone <repo-url> ns-controller
+cd ns-controller
 
 # Install dependencies
-$ poetry install
+poetry install
 ```
 
 ## Usage
 
-### CLI
+### After Installation
 
-Run the CLI to start the controller interface:
+If you used the install script, the service starts automatically on boot. Simply:
 
-```fish
-$ poetry run ns-controller-python --filepath /dev/hidg0
+1. Connect your Raspberry Pi to the Nintendo Switch via USB
+2. Access the Streamlit UI from any browser: `http://<pi-ip>:8501`
+3. Use the UI to control the Switch or manage macros
+
+### Manual Run
+
+Run the server manually:
+
+```bash
+poetry run ns-controller --filepath /dev/hidg0 --host 0.0.0.0 --port 9000
 ```
 
-- `--filepath`: Path to the HID device (default: `/dev/hidg0`).
+Options:
+- `--filepath`: Path to the HID device (default: `/dev/hidg0`)
+- `--host`: TCP server host (default: `0.0.0.0`)
+- `--port`: TCP server port (default: `9000`)
+- `--mock`: Run in mock mode (no HID device required)
 
-### API
+### TCP Protocol
 
-The CLI starts a FastAPI server with the following endpoint:
+The server uses a binary protocol over TCP on port 9000. See the client implementation in `ns_controller/client.py` for details.
 
-- `POST /update`
-  - Body: JSON representing the new controller state (see below)
-  - Query params: `down` (float, default 0.1), `up` (float, default 0.1)
+Message types supported:
+- `PING/PONG`: Health check
+- `NORMAL`: Send controller state
+- `GET_STATE`: Get current controller state
+- `MACRO_START/STOP`: Control macro execution
+- `PAUSE_MACRO/RESUME_MACRO`: Pause/resume running macros
+- `LIST_MACROS/LOAD_MACRO/SAVE_MACRO/DELETE_MACRO`: Macro management
 
-Example request:
-```json
-{
-  "buttons": {"a": true, "b": false, ...},
-  "dpad": {"up": false, "down": true, ...},
-  "sticks": {
-    "ls": {"x": 0, "y": 0, "pressed": false},
-    "rs": {"x": 0, "y": 0, "pressed": false}
-  }
-}
-```
+### Streamlit UI
 
-The controller will update to the new state for `down` seconds, then revert for `up` seconds.
+The Streamlit UI provides:
+- Button controls for all Pro Controller buttons
+- Analog stick controls
+- Macro editor with NXBT syntax support
+- Macro management (save, load, delete)
+- Macro execution controls (start, stop, pause, resume)
 
 ## Development
 
