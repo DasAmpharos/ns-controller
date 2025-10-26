@@ -99,7 +99,25 @@ ln -s functions/hid.usb0 configs/c.1/
 
 # Find and enable UDC
 echo "Finding UDC device..."
-UDC_DEVICE=$(ls /sys/class/udc | head -n 1)
+
+# First check if dtoverlay is correctly configured
+echo "Checking dwc2 configuration..."
+if grep -q "dtoverlay=dwc2,dr_mode=host" /boot/config.txt /boot/firmware/config.txt 2>/dev/null; then
+    echo "ERROR: Found 'dtoverlay=dwc2,dr_mode=host' in config!"
+    echo ""
+    echo "The dr_mode=host parameter forces USB into HOST mode, which prevents"
+    echo "gadget mode from working. You need to change it to peripheral mode."
+    echo ""
+    echo "To fix this, run:"
+    echo "  sudo sed -i 's/dtoverlay=dwc2,dr_mode=host/dtoverlay=dwc2/' /boot/firmware/config.txt"
+    echo "  sudo sed -i 's/dtoverlay=dwc2,dr_mode=host/dtoverlay=dwc2/' /boot/config.txt"
+    echo "  sudo reboot"
+    echo ""
+    echo "After reboot, run this script again."
+    exit 1
+fi
+
+UDC_DEVICE=$(ls /sys/class/udc 2>/dev/null | head -n 1)
 
 if [ -z "$UDC_DEVICE" ]; then
     echo "Error: No UDC device found!"
@@ -107,6 +125,7 @@ if [ -z "$UDC_DEVICE" ]; then
     echo "  1. dwc2 module is not loaded properly"
     echo "  2. Your Raspberry Pi model doesn't support USB gadget mode"
     echo "  3. You need to reboot after enabling dtoverlay=dwc2"
+    echo "  4. dtoverlay has incorrect dr_mode parameter"
     exit 1
 fi
 
