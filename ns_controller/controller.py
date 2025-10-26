@@ -1,12 +1,12 @@
 import asyncio
 import functools
+from dataclasses import Field, dataclass
 from enum import IntEnum
 from pathlib import Path
 from types import MappingProxyType
 from typing import Final
 
 from loguru import logger
-from pydantic import BaseModel, Field
 
 
 class Buttons(IntEnum):
@@ -30,12 +30,14 @@ class Buttons(IntEnum):
     HOME = 17
 
 
-class StickPosition(BaseModel):
+@dataclass
+class StickPosition:
     x: float = 0.0
     y: float = 0.0
 
 
-class ControllerState(BaseModel):
+@dataclass
+class ControllerState:
     buttons: int = 0  # Bitmask for buttons
     ls: StickPosition = Field(default_factory=StickPosition)
     rs: StickPosition = Field(default_factory=StickPosition)

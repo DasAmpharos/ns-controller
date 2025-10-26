@@ -15,6 +15,7 @@ from .controller import Buttons, ControllerState, StickPosition
 
 class MacroStep(NamedTuple):
     """A single step in a macro sequence."""
+
     state: ControllerState
     duration: float  # seconds
 

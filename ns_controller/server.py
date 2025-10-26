@@ -201,10 +201,7 @@ class Server:
             parsed_steps = parse_macro(macro_data)
             steps = []
             for macro_step in parsed_steps:
-                steps.append({
-                    "state": macro_step.state,
-                    "duration": macro_step.duration
-                })
+                steps.append({"state": macro_step.state, "duration": macro_step.duration})
             repeat = None  # Default to infinite for text macros
         else:
             # It's a dict with steps and optional repeat
@@ -289,14 +286,16 @@ class Server:
             # Convert to storable format
             steps = []
             for macro_step in parsed_steps:
-                steps.append({
-                    "state": {
-                        "buttons": macro_step.state.buttons,
-                        "ls": {"x": macro_step.state.ls.x, "y": macro_step.state.ls.y},
-                        "rs": {"x": macro_step.state.rs.x, "y": macro_step.state.rs.y}
-                    },
-                    "duration": macro_step.duration
-                })
+                steps.append(
+                    {
+                        "state": {
+                            "buttons": macro_step.state.buttons,
+                            "ls": {"x": macro_step.state.ls.x, "y": macro_step.state.ls.y},
+                            "rs": {"x": macro_step.state.rs.x, "y": macro_step.state.rs.y},
+                        },
+                        "duration": macro_step.duration,
+                    }
+                )
             macro_obj = {"steps": steps, "source": macro_text}
             macro_json = json.dumps(macro_obj, indent=2)
         except Exception:
@@ -333,7 +332,7 @@ class Server:
     async def handle_get_macro_status(self, writer: StreamWriter) -> None:
         status = {
             "running": self.macro_runner.is_running() if self.macro_runner else False,
-            "paused": self.macro_runner.is_paused() if self.macro_runner else False
+            "paused": self.macro_runner.is_paused() if self.macro_runner else False,
         }
         writer.write(json.dumps(status).encode())
         await writer.drain()
@@ -342,7 +341,7 @@ class Server:
         state = {
             "buttons": self.controller.state.buttons,
             "ls": {"x": self.controller.state.ls.x, "y": self.controller.state.ls.y},
-            "rs": {"x": self.controller.state.rs.x, "y": self.controller.state.rs.y}
+            "rs": {"x": self.controller.state.rs.x, "y": self.controller.state.rs.y},
         }
         writer.write(json.dumps(state).encode())
         await writer.drain()
