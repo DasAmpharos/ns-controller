@@ -60,28 +60,44 @@ echo "  Cleaned apt cache to free up space"
 # 2. Enable dwc2 overlay for USB gadget mode
 echo "[2/7] Configuring USB gadget mode..."
 
-# Add dwc2 overlay to /boot/config.txt if not already present
-if ! grep -q "^dtoverlay=dwc2" /boot/config.txt; then
-    echo "dtoverlay=dwc2" >> /boot/config.txt
-    echo "  Added dtoverlay=dwc2 to /boot/config.txt"
+# Detect which config file to use
+if [ -f /boot/firmware/config.txt ]; then
+    BOOT_CONFIG="/boot/firmware/config.txt"
+elif [ -f /boot/config.txt ]; then
+    BOOT_CONFIG="/boot/config.txt"
 else
-    echo "  dtoverlay=dwc2 already configured"
+    echo "Error: Could not find boot config file"
+    exit 1
 fi
 
-# Add dwc2 and libcomposite to /etc/modules if not already present
-if ! grep -q "^dwc2" /etc/modules; then
-    echo "dwc2" >> /etc/modules
-    echo "  Added dwc2 to /etc/modules"
-else
-    echo "  dwc2 already in /etc/modules"
+echo "  Using boot config: $BOOT_CONFIG"
+
+# Check for and fix dr_mode=host if present
+if grep -q "dtoverlay=dwc2,dr_mode=host" "$BOOT_CONFIG"; then
+    echo "  Fixing dr_mode=host in $BOOT_CONFIG..."
+    sed -i 's/dtoverlay=dwc2,dr_mode=host/dtoverlay=dwc2/' "$BOOT_CONFIG"
+    echo "  Fixed: Changed dr_mode=host to gadget mode"
 fi
 
-if ! grep -q "^libcomposite" /etc/modules; then
-    echo "libcomposite" >> /etc/modules
-    echo "  Added libcomposite to /etc/modules"
+# Add dwc2 overlay if not already present
+if ! grep -q "^dtoverlay=dwc2" "$BOOT_CONFIG"; then
+    echo "dtoverlay=dwc2" >> "$BOOT_CONFIG"
+    echo "  Added dtoverlay=dwc2 to $BOOT_CONFIG"
 else
-    echo "  libcomposite already in /etc/modules"
+    echo "  dtoverlay=dwc2 already configured in $BOOT_CONFIG"
 fi
+
+# Use modern /etc/modules-load.d/ instead of obsolete /etc/modules
+MODULES_FILE="/etc/modules-load.d/ns-controller.conf"
+echo "  Configuring kernel modules in $MODULES_FILE"
+
+cat > "$MODULES_FILE" << 'EOF'
+# Kernel modules for Nintendo Switch Controller USB Gadget
+dwc2
+libcomposite
+EOF
+
+echo "  Created $MODULES_FILE"
 
 # 3. Create USB gadget setup script
 echo "[3/7] Creating USB gadget setup script..."
