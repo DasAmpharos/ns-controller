@@ -285,28 +285,17 @@ else
     echo "  ⚠ Warning: /dev/hidg0 not created. Check 'systemctl status usb-gadget.service' after installation."
 fi
 
-# 5. Install Python dependencies
-echo "[5/7] Installing Python dependencies..."
+# 5. Create Python virtual environment
+echo "[5/7] Setting up Python virtual environment..."
 cd "$INSTALL_DIR"
 
-# Check if Poetry is installed
-if ! command -v poetry &> /dev/null; then
-    echo "  Installing Poetry..."
-    sudo -u "$SERVICE_USER" pip3 install --user poetry
-    POETRY_PATH="$HOME/.local/bin/poetry"
-else
-    POETRY_PATH="$(command -v poetry)"
-fi
+VENV_PATH="$INSTALL_DIR/.venv"
 
-echo "  Poetry path: $POETRY_PATH"
-echo "  Installing project dependencies with Poetry..."
-sudo -u "$SERVICE_USER" "$POETRY_PATH" install --no-root
+# Create virtual environment
+echo "  Creating virtual environment at $VENV_PATH..."
+sudo -u "$SERVICE_USER" python3 -m venv "$VENV_PATH"
 
-# Get the virtual environment path from Poetry
-VENV_PATH=$(sudo -u "$SERVICE_USER" "$POETRY_PATH" env info --path)
 PYTHON_PATH="$VENV_PATH/bin/python"
-
-echo "  Virtual environment: $VENV_PATH"
 echo "  Python path: $PYTHON_PATH"
 
 # 6. Create systemd service for ns-controller
