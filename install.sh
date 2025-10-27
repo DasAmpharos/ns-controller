@@ -52,7 +52,7 @@ echo ""
 # 1. Install system dependencies
 echo "[1/7] Installing system dependencies..."
 apt-get update
-apt-get install -y python3-full python3-venv
+apt-get install -y python3-full python3-venv xxd
 # Clean up to save space
 apt-get clean
 echo "  Cleaned apt cache to free up space"
@@ -103,33 +103,57 @@ echo "  Created $MODULES_FILE"
 echo "[3/7] Creating USB gadget setup script..."
 cat > /usr/local/bin/setup-usb-gadget.sh << 'EOF'
 #!/bin/bash
-# Setup Nintendo Switch Pro Controller USB Gadget
+set -e  # Exit on error
 
+# Setup Nintendo Switch Pro Controller USB Gadget
 DEVICE=/dev/hidg0
 GADGET_DIR="/sys/kernel/config/usb_gadget/procon"
+
+echo "Setting up USB gadget..."
+
+# Check if configfs is mounted
+if ! mount | grep -q configfs; then
+    echo "Error: configfs is not mounted"
+    exit 1
+fi
 
 # Remove existing gadget if it exists
 if [ -d "$GADGET_DIR" ]; then
     echo "Removing existing USB gadget..."
-    if [ -e "$GADGET_DIR/UDC" ]; then
-        echo "" > "$GADGET_DIR/UDC"
+    # Unbind from UDC first
+    if [ -f "$GADGET_DIR/UDC" ] && [ -s "$GADGET_DIR/UDC" ]; then
+        echo "" > "$GADGET_DIR/UDC" 2>/dev/null || true
     fi
+    sleep 0.5
+    # Remove symlinks
     find "$GADGET_DIR/configs/c.1" -maxdepth 1 -type l -exec rm {} \; 2>/dev/null || true
+    # Remove directories in reverse order
     rmdir "$GADGET_DIR/configs/c.1/strings/0x409" 2>/dev/null || true
     rmdir "$GADGET_DIR/configs/c.1" 2>/dev/null || true
     rmdir "$GADGET_DIR/functions/hid.usb0" 2>/dev/null || true
     rmdir "$GADGET_DIR/strings/0x409" 2>/dev/null || true
     rmdir "$GADGET_DIR" 2>/dev/null || true
+    echo "Existing gadget removed"
+fi
+
+# Check if UDC device exists before proceeding
+if [ ! -d /sys/class/udc ] || [ -z "$(ls -A /sys/class/udc 2>/dev/null)" ]; then
+    echo "Error: No UDC device found in /sys/class/udc"
+    echo "This means dwc2 is not working properly."
+    echo "Check: lsmod | grep dwc2"
+    echo "Check: ls /sys/class/udc/"
+    exit 1
 fi
 
 # Load modules
-modprobe libcomposite
+modprobe libcomposite 2>/dev/null || true
 
 # Create gadget directory
 mkdir -p "$GADGET_DIR"
-cd "$GADGET_DIR"
+cd "$GADGET_DIR" || exit 1
 
 # Configure USB device descriptor
+echo "Configuring device descriptor..."
 echo 0x057e > idVendor   # Nintendo
 echo 0x2009 > idProduct  # Pro Controller
 echo 0x0200 > bcdUSB     # USB 2.0
@@ -139,33 +163,79 @@ echo 0x00 > bDeviceSubClass
 echo 0x00 > bDeviceProtocol
 
 # Create English strings
+echo "Creating device strings..."
 mkdir -p strings/0x409
 echo "000000000001" > strings/0x409/serialnumber
 echo "Nintendo Co., Ltd." > strings/0x409/manufacturer
 echo "Pro Controller" > strings/0x409/product
 
+# Create configuration
+echo "Creating configuration..."
 mkdir -p configs/c.1/strings/0x409
 echo "Nintendo Switch Pro Controller" > configs/c.1/strings/0x409/configuration
 echo 500 > configs/c.1/MaxPower
 echo 0xa0 > configs/c.1/bmAttributes
 
+# Create HID function
+echo "Creating HID function..."
 mkdir -p functions/hid.usb0
 echo 0 > functions/hid.usb0/protocol
 echo 0 > functions/hid.usb0/subclass
 echo 64 > functions/hid.usb0/report_length
+
+# Write HID report descriptor (Nintendo Switch Pro Controller descriptor)
+echo "Writing HID report descriptor..."
 echo 050115000904A1018530050105091901290A150025017501950A5500650081020509190B290E150025017501950481027501950281030B01000100A1000B300001000B310001000B320001000B35000100150027FFFF0000751095048102C00B39000100150025073500463B0165147504950181020509190F2912150025017501950481027508953481030600FF852109017508953F8103858109027508953F8103850109037508953F9183851009047508953F9183858009057508953F9183858209067508953F9183C0 | xxd -r -ps > functions/hid.usb0/report_desc
 
+# Verify report descriptor was written
+if [ ! -s functions/hid.usb0/report_desc ]; then
+    echo "Error: Failed to write HID report descriptor"
+    exit 1
+fi
+
 # Link function to configuration
-ln -s functions/hid.usb0 configs/c.1/
+echo "Linking HID function to configuration..."
+if [ ! -e configs/c.1/hid.usb0 ]; then
+    ln -s functions/hid.usb0 configs/c.1/
+fi
 
-# Enable gadget
+# Get UDC device
 UDC_DEVICE=$(ls /sys/class/udc | head -n 1)
-echo "$UDC_DEVICE" > UDC
+if [ -z "$UDC_DEVICE" ]; then
+    echo "Error: No UDC device found"
+    exit 1
+fi
 
-chmod 666 $DEVICE
-ls -l $DEVICE
+echo "Found UDC device: $UDC_DEVICE"
 
-echo "USB gadget setup complete. HID device should be at $DEVICE"
+# Enable gadget by writing UDC name
+echo "Enabling USB gadget..."
+if ! echo "$UDC_DEVICE" > UDC; then
+    echo "Error: Failed to enable USB gadget (write to UDC failed)"
+    exit 1
+fi
+
+# Wait for device to be created
+echo "Waiting for $DEVICE to be created..."
+for i in {1..10}; do
+    if [ -e "$DEVICE" ]; then
+        break
+    fi
+    sleep 0.5
+done
+
+# Verify device was created
+if [ ! -e "$DEVICE" ]; then
+    echo "Error: $DEVICE was not created after enabling gadget"
+    echo "Check: ls -la /dev/hidg*"
+    exit 1
+fi
+
+# Set permissions
+chmod 666 "$DEVICE"
+
+echo "USB gadget setup complete!"
+echo "HID device: $(ls -l $DEVICE)"
 EOF
 
 chmod +x /usr/local/bin/setup-usb-gadget.sh
