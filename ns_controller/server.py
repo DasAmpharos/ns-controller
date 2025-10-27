@@ -1,11 +1,15 @@
 import asyncio
+import logging
 from asyncio import StreamReader, StreamWriter
+from typing import Final
 
 from .controller import Controller
 from .protocol import InputRequest, InputRequestStruct, MessageType
 
 
 class Server:
+    logger: Final = logging.getLogger(__name__)
+
     def __init__(self, controller: Controller):
         self.controller = controller
 
@@ -34,6 +38,7 @@ class Server:
     async def handle_input(self, reader: StreamReader, writer: StreamWriter) -> None:
         data = await reader.readexactly(InputRequestStruct.size)
         input_request = InputRequest.unpack(data)
+        self.logger.info("Received input request: %s", input_request)
 
         previous_input = self.controller.get_input()
         self.controller.set_input(input_request.controller_input)

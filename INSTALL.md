@@ -8,8 +8,8 @@ This guide will help you install and configure the NS-Controller on your Raspber
 - Raspberry Pi OS (Bookworm or later recommended)
 - MicroSD card with at least 8GB (16GB recommended)
 - At least 500MB free disk space for installation
-- USB cable to connect Pi to Nintendo Switch
 
+## Quick Installation
 **Note**: If you're running low on disk space, free up space before installation:
 ```bash
 # Remove unused packages
@@ -21,19 +21,6 @@ sudo apt clean
 # Clean old logs (keep last 7 days)
 sudo journalctl --vacuum-time=7d
 ```
-
-## Quick Installation
-
-1. Clone or copy this repository to your Raspberry Pi:
-   ```bash
-   git clone <repository-url> ns-controller
-   cd ns-controller
-   ```
-
-2. Run the installation script with sudo:
-   ```bash
-   sudo ./install.sh
-   ```
 
 3. Reboot the Raspberry Pi:
    ```bash
@@ -51,34 +38,33 @@ sudo journalctl --vacuum-time=7d
 
 The `install.sh` script performs the following actions:
 
+1. **Installs system dependencies**: Python 3 (full), venv, git, curl
+2. **Configures USB gadget mode**:
+   - Adds `dtoverlay=dwc2` to `/boot/config.txt`
+   - Adds required modules to `/etc/modules`
+3. **Creates USB gadget setup script**: `/usr/local/bin/setup-usb-gadget.sh`
+   - Configures the Pi as a Nintendo Switch Pro Controller USB HID device
+   - Creates `/dev/hidg0` for controller communication
+4. **Creates USB gadget systemd service**: Automatically sets up USB gadget on boot
+5. **Installs the application**: Copies files to `/opt/ns-controller`
+6. **Installs Python dependencies**:
+   - Installs Poetry using the official installer (works with externally managed environments)
+   - Creates a virtual environment and installs required packages
+7. **Creates ns-controller systemd service**: Runs the server automatically on startup
 1. **Checks disk space**: Ensures at least 500MB is available
 2. **Installs system dependencies**: Python 3 (full), venv, git, libffi-dev, build-essential
 3. **Configures USB gadget mode**: 
-   - Adds `dtoverlay=dwc2` to `/boot/config.txt`
-   - Adds required modules to `/etc/modules`
+If you prefer to install manually or need to customize the installation:
+
 4. **Creates USB gadget setup script**: `/usr/local/bin/setup-usb-gadget.sh`
-   - Configures the Pi as a Nintendo Switch Pro Controller USB HID device
-   - Creates `/dev/hidg0` for controller communication
+
+Edit `/boot/config.txt`:
 5. **Creates USB gadget systemd service**: Automatically sets up USB gadget on boot
 6. **Installs the application**: Copies files to `/opt/ns-controller`
 7. **Installs Python dependencies**: 
    - Creates a virtual environment at `/opt/ns-controller/.venv`
    - Installs packages from requirements.txt using pip (with --no-cache-dir to save space)
 8. **Creates ns-controller systemd service**: Runs the server automatically on startup
-
-## Manual Installation
-
-If you prefer to install manually or need to customize the installation:
-
-### 1. Enable USB Gadget Mode
-
-Edit `/boot/config.txt`:
-```bash
-sudo nano /boot/config.txt
-```
-
-Add this line at the end:
-```
 dtoverlay=dwc2
 ```
 
@@ -100,38 +86,38 @@ Copy the USB gadget setup script from the install script or create your own base
 ### 3. Install Python Dependencies
 
 ```bash
+# Install Poetry using the official installer
+# This works with externally managed Python environments
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Add Poetry to PATH for current session
+export PATH="$HOME/.local/bin:$PATH"
+
+# Install project dependencies
+cd ns-controller
+poetry install
+```
+
+**Note**: Raspberry Pi OS uses an externally managed Python environment. The Poetry installer creates an isolated environment that works around this restriction. Do not use `pip install poetry` as it will fail with an externally-managed-environment error.
+
 # Create virtual environment
 python3 -m venv .venv
-
+```bash
 # Activate virtual environment
 source .venv/bin/activate
 
 # Install dependencies
 pip install --no-cache-dir -r requirements.txt
-```
-
-### 4. Run the Server
-
-```bash
-# Make sure virtual environment is activated
-source .venv/bin/activate
-
-# Run the server
-python -m ns_controller.cli --host 0.0.0.0 --port 9000
-```
-
-## Service Management
-
 Once installed, the ns-controller runs as a systemd service:
 
 ### Check Status
 ```bash
 sudo systemctl status ns-controller
-```
+# Make sure virtual environment is activated
+source .venv/bin/activate
 
-### View Logs
-```bash
-sudo journalctl -u ns-controller -f
+# Run the server
+python -m ns_controller.cli --host 0.0.0.0 --port 9000
 ```
 
 ### Start/Stop/Restart
@@ -153,6 +139,20 @@ sudo systemctl enable ns-controller
 
 ## Troubleshooting
 
+### USB Gadget Not Working
+
+Check if `/dev/hidg0` exists:
+```bash
+ls -la /dev/hidg0
+```
+
+If it doesn't exist, manually run the setup script:
+```bash
+sudo /usr/local/bin/setup-usb-gadget.sh
+```
+
+Check USB gadget service:
+```bash
 ### Installation Fails with "No space left on device"
 
 Free up disk space:
@@ -182,50 +182,6 @@ sudo apt-get install -y libffi-dev build-essential
 
 Then run the install script again.
 
-### USB Gadget Not Working
-
-Check if `/dev/hidg0` exists:
-```bash
-ls -la /dev/hidg0
-```
-
-If it doesn't exist, manually run the setup script:
-```bash
-sudo /usr/local/bin/setup-usb-gadget.sh
-```
-
-Check USB gadget service:
-```bash
-sudo systemctl status usb-gadget
-```
-
-### Service Won't Start
-
-Check the logs:
-```bash
-sudo journalctl -u ns-controller -n 50
-```
-
-Verify the HID device exists:
-```bash
-ls -la /dev/hidg0
-```
-
-Try running manually to see errors:
-```bash
-cd /opt/ns-controller
-source .venv/bin/activate
-python -m ns_controller.cli
-```
-
-### Can't Access Streamlit UI
-
-1. Find your Pi's IP address:
-   ```bash
-   hostname -I
-   ```
-
-2. Make sure port 8501 is accessible:
    ```bash
    sudo netstat -tulpn | grep 8501
    ```
@@ -258,8 +214,8 @@ To remove ns-controller:
 # Stop and disable services
 sudo systemctl stop ns-controller
 sudo systemctl disable ns-controller
-sudo systemctl stop usb-gadget
-sudo systemctl disable usb-gadget
+source .venv/bin/activate
+python -m ns_controller.cli
 
 # Remove service files
 sudo rm /etc/systemd/system/ns-controller.service
@@ -292,8 +248,7 @@ For testing without a physical connection to the Switch:
 ```bash
 sudo systemctl stop ns-controller
 cd /opt/ns-controller
-source .venv/bin/activate
-python -m ns_controller.cli --mock
+poetry run ns-controller --mock
 ```
 
 This runs a mock server that simulates the controller without requiring `/dev/hidg0`.
