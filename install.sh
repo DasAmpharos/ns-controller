@@ -22,11 +22,10 @@ if ! grep -q "Raspberry Pi" /proc/cpuinfo 2>/dev/null; then
     fi
 fi
 
-INSTALL_DIR="/opt/ns-controller"
 SERVICE_USER="${SUDO_USER:-$USER}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "Installing to: $INSTALL_DIR"
+echo "Installing from current directory: $INSTALL_DIR"
 echo "Running as user: $SERVICE_USER"
 echo ""
 
@@ -286,27 +285,32 @@ else
     echo "  ⚠ Warning: /dev/hidg0 not created. Check 'systemctl status usb-gadget.service' after installation."
 fi
 
-# 5. Copy project files
-echo "[5/7] Installing ns-controller application..."
-mkdir -p "$INSTALL_DIR"
-cp -r "$SCRIPT_DIR"/* "$INSTALL_DIR/"
-chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR"
-
-# 6. Install Python dependencies
-echo "[6/7] Installing Python dependencies..."
+# 5. Install Python dependencies
+echo "[5/7] Installing Python dependencies..."
 cd "$INSTALL_DIR"
 
-# Create virtual environment
-VENV_PATH="$INSTALL_DIR/.venv"
-echo "  Creating virtual environment..."
-sudo -u "$SERVICE_USER" python3 -m venv "$VENV_PATH"
+# Check if Poetry is installed
+if ! command -v poetry &> /dev/null; then
+    echo "  Installing Poetry..."
+    sudo -u "$SERVICE_USER" pip3 install --user poetry
+    POETRY_PATH="$HOME/.local/bin/poetry"
+else
+    POETRY_PATH="$(command -v poetry)"
+fi
+
+echo "  Poetry path: $POETRY_PATH"
+echo "  Installing project dependencies with Poetry..."
+sudo -u "$SERVICE_USER" "$POETRY_PATH" install --no-root
+
+# Get the virtual environment path from Poetry
+VENV_PATH=$(sudo -u "$SERVICE_USER" "$POETRY_PATH" env info --path)
 PYTHON_PATH="$VENV_PATH/bin/python"
 
 echo "  Virtual environment: $VENV_PATH"
 echo "  Python path: $PYTHON_PATH"
 
-# 7. Create systemd service for ns-controller
-echo "[7/7] Creating ns-controller systemd service..."59
+# 6. Create systemd service for ns-controller
+echo "[6/7] Creating ns-controller systemd service..."
 
 cat > /etc/systemd/system/ns-controller.service << EOF
 [Unit]
