@@ -300,22 +300,13 @@ cd "$INSTALL_DIR"
 VENV_PATH="$INSTALL_DIR/.venv"
 echo "  Creating virtual environment..."
 sudo -u "$SERVICE_USER" python3 -m venv "$VENV_PATH"
-
-# Install dependencies with pip (no cache to save space)
-echo "  Installing packages (this may take a few minutes)..."
-sudo -u "$SERVICE_USER" bash << EOF
-source "$VENV_PATH/bin/activate"
-pip install --no-cache-dir -r "$INSTALL_DIR/requirements.txt"
-deactivate
-EOF
-
 PYTHON_PATH="$VENV_PATH/bin/python"
 
 echo "  Virtual environment: $VENV_PATH"
 echo "  Python path: $PYTHON_PATH"
 
 # 7. Create systemd service for ns-controller
-echo "[7/7] Creating ns-controller systemd service..."
+echo "[7/7] Creating ns-controller systemd service..."59
 
 cat > /etc/systemd/system/ns-controller.service << EOF
 [Unit]
