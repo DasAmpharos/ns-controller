@@ -1,17 +1,15 @@
 [tool.poetry]
 name = "ns-controller"
 version = "0.1.0"
-description = "Nintendo Switch Pro Controller emulator over USB with TCP server and Streamlit UI"
+description = "Nintendo Switch Pro Controller emulator over USB with TCP server"
 authors = ["Dylan Meadows <dylmeadows@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.13"
-click = "^8.3.0"
-loguru = "^0.7.3"
 
 [tool.poetry.scripts]
-ns-controller = "ns_controller.cli:main"
+ns-controller = "ns_controller.cli:cli"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.2"
