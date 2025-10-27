@@ -105,6 +105,7 @@ cat > /usr/local/bin/setup-usb-gadget.sh << 'EOF'
 #!/bin/bash
 # Setup Nintendo Switch Pro Controller USB Gadget
 
+DEVICE=/dev/hidg0
 GADGET_DIR="/sys/kernel/config/usb_gadget/procon"
 
 # Remove existing gadget if it exists
@@ -161,11 +162,10 @@ ln -s functions/hid.usb0 configs/c.1/
 UDC_DEVICE=$(ls /sys/class/udc | head -n 1)
 echo "$UDC_DEVICE" > UDC
 
-chmod 666 $device
+chmod 666 $DEVICE
+ls -l $DEVICE
 
-ls -l $device
-
-echo "USB gadget setup complete. HID device should be at /dev/hidg0"
+echo "USB gadget setup complete. HID device should be at $DEVICE"
 EOF
 
 chmod +x /usr/local/bin/setup-usb-gadget.sh
