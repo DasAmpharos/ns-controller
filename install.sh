@@ -79,12 +79,22 @@ if grep -q "dtoverlay=dwc2,dr_mode=host" "$BOOT_CONFIG"; then
     echo "  Fixed: Changed dr_mode=host to gadget mode"
 fi
 
-# Add dwc2 overlay if not already present
-if ! grep -q "^dtoverlay=dwc2" "$BOOT_CONFIG"; then
-    echo "dtoverlay=dwc2" >> "$BOOT_CONFIG"
-    echo "  Added dtoverlay=dwc2 to $BOOT_CONFIG"
+# Add dwc2 overlay if not already present in [all] section
+if grep -A 10 "^\[all\]" "$BOOT_CONFIG" | grep -q "^dtoverlay=dwc2"; then
+    echo "  dtoverlay=dwc2 already configured in [all] section"
 else
-    echo "  dtoverlay=dwc2 already configured in $BOOT_CONFIG"
+    # Check if [all] section exists
+    if grep -q "^\[all\]" "$BOOT_CONFIG"; then
+        # Add after [all] line
+        sed -i '/^\[all\]/a dtoverlay=dwc2' "$BOOT_CONFIG"
+        echo "  Added dtoverlay=dwc2 to [all] section in $BOOT_CONFIG"
+    else
+        # No [all] section, just append
+        echo "" >> "$BOOT_CONFIG"
+        echo "[all]" >> "$BOOT_CONFIG"
+        echo "dtoverlay=dwc2" >> "$BOOT_CONFIG"
+        echo "  Added [all] section with dtoverlay=dwc2 to $BOOT_CONFIG"
+    fi
 fi
 
 # Use modern /etc/modules-load.d/ instead of obsolete /etc/modules
