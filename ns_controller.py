@@ -85,7 +85,7 @@ class NsController:
         if self.fp is not None:
             raise Exception('Already connected')
 
-        self.fp = open(path, 'r+b', buffering=0)
+        self.fp = open(path, 'w+b', buffering=0)
 
         self.stop_communicate.clear()
         self.stop_counter.clear()
