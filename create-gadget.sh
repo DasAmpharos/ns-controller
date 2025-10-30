@@ -17,6 +17,25 @@ fi
 
 set -e
 
+# Ensure configfs is mounted
+if ! mountpoint -q /sys/kernel/config; then
+  echo "Mounting configfs..."
+  mount -t configfs none /sys/kernel/config
+fi
+
+# Load USB gadget modules if not already loaded
+if ! lsmod | grep -q libcomposite; then
+  echo "Loading libcomposite module..."
+  modprobe libcomposite
+fi
+
+# Ensure usb_gadget directory exists
+if [[ ! -d /sys/kernel/config/usb_gadget/ ]]; then
+  echo "Error: /sys/kernel/config/usb_gadget/ does not exist" 1>&2
+  echo "Your kernel may not support USB gadget configfs" 1>&2
+  exit 1
+fi
+
 cd /sys/kernel/config/usb_gadget/
 mkdir -p procon
 cd procon
