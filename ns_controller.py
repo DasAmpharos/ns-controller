@@ -147,7 +147,7 @@ class NsController:
                                 ]))
                             case _:
                                 self.logger.info("UART unknown request %s %s", buf[10], buf)
-                        # break
+                        break
                     case 0x00 | 0x10:
                         pass
                     case _:
