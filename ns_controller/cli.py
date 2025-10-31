@@ -4,8 +4,7 @@ import time
 import click
 from fastapi import FastAPI, HTTPException
 
-from ns_controller.protocol import ControllerInput
-from .controller import Controller
+from .controller import Controller, ControllerInput
 
 
 @click.command()
