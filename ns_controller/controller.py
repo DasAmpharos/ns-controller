@@ -87,70 +87,77 @@ class Controller:
         def run_comm_thread():
             buf = bytearray(128)
 
-            while not self.stop_comm.is_set():
-                n = self.fp.readinto(buf)
-                logger.info("read: %s", buf[:n].hex())
+            try:
+                while not self.stop_comm.is_set():
+                    n = self.fp.readinto(buf)
+                    logger.info("read: %s", buf[:n].hex())
 
-                match buf[0]:
-                    case 0x80:
-                        match buf[1]:
-                            case 0x01:
-                                self.write(0x81, buf[1], bytes([
-                                    0x00, 0x03, 0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e
-                                ]))
-                            case 0x02 | 0x03:
-                                self.write(0x81, buf[1], bytes([]))
-                            case 0x04:
-                                self.start_input_report()
-                            case 0x05:
-                                self.stop_input.set()
-                                # Wait briefly for thread to stop, then recreate event
-                                time.sleep(0.001)
-                                self.stop_input = threading.Event()
-                    case 0x01:
-                        match buf[10]:
-                            case 0x01:
-                                self.uart(True, buf[10], bytes([
-                                    0x03, 0x01
-                                ]))
-                            case 0x02:
-                                self.uart(True, buf[10], bytes([
-                                    0x03, 0x48, 0x03, 0x02, 0x5e, 0x53, 0x00, 0x5e, 0x00, 0x00, 0x03, 0x01
-                                ]))
-                            case 0x03 | 0x08 | 0x30 | 0x38 | 0x40 | 0x41 | 0x48:
-                                self.uart(True, buf[10], bytes([]))
-                            case 0x04:
-                                self.uart(True, buf[10], bytes([]))
-                            case 0x10:
-                                data = self.SPI_ROM_DATA.get(buf[12], None)
-                                if data:
-                                    self.uart(True, buf[10], buf[11:16] + data[buf[11]:buf[11] + buf[15]])
-                                    logger.info("Read SPI address: %02x%02x[%d] %s", buf[12], buf[11], buf[15],
-                                                data[buf[11]:buf[11] + buf[15]])
-                                else:
-                                    self.uart(False, buf[10], bytes([]))
-                                    logger.info("Unknown SPI address: %02x[%d]", buf[12], buf[15])
-                            case 0x21:
-                                self.uart(True, buf[10], bytes([
-                                    0x01, 0x00, 0xff, 0x00, 0x03, 0x00, 0x05, 0x01
-                                ]))
-                            case _:
-                                logger.info("UART unknown request %s %s", buf[10], buf)
-                    case 0x00 | 0x10:
-                        pass
-                    case _:
-                        logger.info("unknown request %s", buf[0])
+                    match buf[0]:
+                        case 0x80:
+                            match buf[1]:
+                                case 0x01:
+                                    self.write(0x81, buf[1], bytes([
+                                        0x00, 0x03, 0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e
+                                    ]))
+                                case 0x02 | 0x03:
+                                    self.write(0x81, buf[1], bytes([]))
+                                case 0x04:
+                                    self.start_input_report()
+                                case 0x05:
+                                    self.stop_input.set()
+                                    # Wait briefly for thread to stop, then recreate event
+                                    time.sleep(0.001)
+                                    self.stop_input = threading.Event()
+                        case 0x01:
+                            match buf[10]:
+                                case 0x01:
+                                    self.uart(True, buf[10], bytes([
+                                        0x03, 0x01
+                                    ]))
+                                case 0x02:
+                                    self.uart(True, buf[10], bytes([
+                                        0x03, 0x48, 0x03, 0x02, 0x5e, 0x53, 0x00, 0x5e, 0x00, 0x00, 0x03, 0x01
+                                    ]))
+                                case 0x03 | 0x08 | 0x30 | 0x38 | 0x40 | 0x41 | 0x48:
+                                    self.uart(True, buf[10], bytes([]))
+                                case 0x04:
+                                    self.uart(True, buf[10], bytes([]))
+                                case 0x10:
+                                    data = self.SPI_ROM_DATA.get(buf[12], None)
+                                    if data:
+                                        self.uart(True, buf[10], buf[11:16] + data[buf[11]:buf[11] + buf[15]])
+                                        logger.info("Read SPI address: %02x%02x[%d] %s", buf[12], buf[11], buf[15],
+                                                    data[buf[11]:buf[11] + buf[15]])
+                                    else:
+                                        self.uart(False, buf[10], bytes([]))
+                                        logger.info("Unknown SPI address: %02x[%d]", buf[12], buf[15])
+                                case 0x21:
+                                    self.uart(True, buf[10], bytes([
+                                        0x01, 0x00, 0xff, 0x00, 0x03, 0x00, 0x05, 0x01
+                                    ]))
+                                case _:
+                                    logger.info("UART unknown request %s %s", buf[10], buf)
+                        case 0x00 | 0x10:
+                            pass
+                        case _:
+                            logger.info("unknown request %s", buf[0])
+            except Exception as e:
+                logger.exception(f"Communication thread crashed: {e}")
+                raise
 
         comm_thread = threading.Thread(target=run_comm_thread, daemon=True)
         comm_thread.start()
 
     def write(self, ack: int, cmd: int, buf: bytes):
         data = bytes([ack, cmd]) + buf + bytes(62 - len(buf))
-        self.fp.write(data)
-
-        logger.info("write: %s", data.hex())
-        if ack == 0x30:
-            logger.info("input report: %s", self.get_input_buffer().hex())
+        try:
+            self.fp.write(data)
+            logger.info("write: %s", data.hex())
+            if ack == 0x30:
+                logger.info("input report: %s", self.get_input_buffer().hex())
+        except Exception as e:
+            logger.error(f"Failed to write to device: {e}")
+            raise
 
     def start_counter(self):
         def run_counter():
