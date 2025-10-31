@@ -1,5 +1,4 @@
 import functools
-import logging
 import threading
 import time
 from pathlib import Path
@@ -66,7 +65,7 @@ class Controller:
         self.fp = None
         self.stop_comm: Final = threading.Event()
         self.stop_counter: Final = threading.Event()
-        self.stop_input: Final = threading.Event()
+        self.stop_input = threading.Event()  # Not Final - gets recreated on 0x05
         self.count = 0
 
     def connect(self, path: str):
@@ -105,7 +104,9 @@ class Controller:
                                 self.start_input_report()
                             case 0x05:
                                 self.stop_input.set()
-                                self.stop_input.clear()
+                                # Wait briefly for thread to stop, then recreate event
+                                time.sleep(0.001)
+                                self.stop_input = threading.Event()
                     case 0x01:
                         match buf[10]:
                             case 0x01:
@@ -135,7 +136,6 @@ class Controller:
                                 ]))
                             case _:
                                 logger.info("UART unknown request %s %s", buf[10], buf)
-                        break
                     case 0x00 | 0x10:
                         pass
                     case _:
@@ -185,8 +185,13 @@ class Controller:
         def bit(position: int, condition: bool) -> int:
             return (1 << position) if condition else 0
 
-        def pack_shorts(x: int, y: int) -> tuple[int, int, int, int]:
-            return (x & 0xFF), (x >> 8), (y & 0xFF), (y >> 8)
+        def pack_shorts(x: int, y: int) -> tuple[int, int, int]:
+            """Pack two 12-bit values into 3 bytes (Nintendo Switch format)."""
+            return (
+                x & 0xFF,
+                ((y << 4) & 0xF0) | ((x >> 8) & 0x0F),
+                (y >> 4) & 0xFF
+            )
 
         rhs = (
                 bit(0, self.controller_input.buttons.y) |
@@ -199,8 +204,8 @@ class Controller:
         center = (
                 bit(0, self.controller_input.buttons.minus) |
                 bit(1, self.controller_input.buttons.plus) |
-                bit(2, self.controller_input.sticks.right.pressed) |
-                bit(3, self.controller_input.sticks.left.pressed) |
+                bit(2, self.controller_input.sticks.rs.pressed) |
+                bit(3, self.controller_input.sticks.ls.pressed) |
                 bit(4, self.controller_input.buttons.home) |
                 bit(5, self.controller_input.buttons.capture)
         )
@@ -213,12 +218,12 @@ class Controller:
                 bit(7, self.controller_input.buttons.zl)
         )
         ls = pack_shorts(
-            int(round((1 + self.controller_input.sticks.left.x) * 2047.5)),
-            int(round((1 + self.controller_input.sticks.left.y) * 2047.5))
+            int(round((1 + self.controller_input.sticks.ls.x) * 2047.5)),
+            int(round((1 + self.controller_input.sticks.ls.y) * 2047.5))
         )
         rs = pack_shorts(
-            int(round((1 + self.controller_input.sticks.right.x) * 2047.5)),
-            int(round((1 + self.controller_input.sticks.right.x) * 2047.5))
+            int(round((1 + self.controller_input.sticks.rs.x) * 2047.5)),
+            int(round((1 + self.controller_input.sticks.rs.y) * 2047.5))
         )
         return bytes([0x81, rhs, center, lhs, ls[0], ls[1], ls[2], rs[0], rs[1], rs[2], 0x00])
 
