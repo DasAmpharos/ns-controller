@@ -44,8 +44,8 @@ class ControllerInput(BaseModel):
 
     class Sticks(BaseModel):
         class Axis(BaseModel):
-            x: int = 0
-            y: int = 0
+            x: float = 0.0
+            y: float = 0.0
             pressed: bool = False
 
         ls: Axis = Field(default_factory=Axis)
@@ -88,9 +88,17 @@ class Controller:
             buf = bytearray(128)
 
             try:
-                while not self.stop_comm.is_set():
-                    n = self.fp.readinto(buf)
-                    logger.info(f"read: {buf[:n].hex()}")
+                while True:
+                    # Check stop signal like Go's select with default
+                    if self.stop_comm.is_set():
+                        return
+
+                    try:
+                        n = self.fp.readinto(buf)
+                        logger.info(f"read: {buf[:n].hex()}")
+                    except Exception as e:
+                        logger.error(f"Read error: {e}")
+                        continue
 
                     match buf[0]:
                         case 0x80:
@@ -162,7 +170,7 @@ class Controller:
         def run_counter():
             while not self.stop_counter.is_set():
                 time.sleep(0.005)  # 5ms
-                self.count += 1
+                self.count = (self.count + 1) & 0xFF  # Wrap at 256 like uint8
 
         counter_thread = threading.Thread(target=run_counter, daemon=True)
         counter_thread.start()
@@ -199,7 +207,8 @@ class Controller:
                 (y >> 4) & 0xFF
             )
 
-        rhs = (
+        # Named 'left' to match button byte position (Go calls this 'left')
+        left = (
                 bit(0, self.controller_input.buttons.y) |
                 bit(1, self.controller_input.buttons.x) |
                 bit(2, self.controller_input.buttons.b) |
@@ -215,7 +224,8 @@ class Controller:
                 bit(4, self.controller_input.buttons.home) |
                 bit(5, self.controller_input.buttons.capture)
         )
-        lhs = (
+        # Named 'right' to match button byte position (Go calls this 'right')
+        right = (
                 bit(0, self.controller_input.dpad.down) |
                 bit(1, self.controller_input.dpad.up) |
                 bit(2, self.controller_input.dpad.right) |
@@ -223,15 +233,17 @@ class Controller:
                 bit(6, self.controller_input.buttons.l) |
                 bit(7, self.controller_input.buttons.zl)
         )
-        ls = pack_shorts(
-            int(round((1 + self.controller_input.sticks.ls.x) * 2047.5)),
-            int(round((1 + self.controller_input.sticks.ls.y) * 2047.5))
-        )
-        rs = pack_shorts(
-            int(round((1 + self.controller_input.sticks.rs.x) * 2047.5)),
-            int(round((1 + self.controller_input.sticks.rs.y) * 2047.5))
-        )
-        return bytes([0x81, rhs, center, lhs, ls[0], ls[1], ls[2], rs[0], rs[1], rs[2], 0x00])
+
+        lx = int(round((1 + self.controller_input.sticks.ls.x) * 2047.5))
+        ly = int(round((1 + self.controller_input.sticks.ls.y) * 2047.5))
+        rx = int(round((1 + self.controller_input.sticks.rs.x) * 2047.5))
+        ry = int(round((1 + self.controller_input.sticks.rs.y) * 2047.5))
+
+        left_stick = pack_shorts(lx, ly)
+        right_stick = pack_shorts(rx, ry)
+
+        return bytes([0x81, left, center, right, left_stick[0], left_stick[1],
+                     left_stick[2], right_stick[0], right_stick[1], right_stick[2], 0x00])
 
     def close(self):
         if self.fp is None:

@@ -11,9 +11,9 @@ from .controller import Controller, ControllerInput
 @click.option("--filepath", default="/dev/hidg0", help="Path to the controller device file")
 def main(filepath: str) -> None:
     """
-    Nintendo Switch Controller Server
+    Nintendo Switch Controller - connects to USB gadget and handles controller protocol.
 
-    Starts a synchronous TCP server for controller input.
+    The process will run until interrupted (Ctrl+C).
     """
     if not os.path.exists(filepath):
         raise click.ClickException(f"Filepath does not exist: {filepath}")
@@ -21,27 +21,19 @@ def main(filepath: str) -> None:
     controller = Controller()
     controller.connect(filepath)
 
-    app = FastAPI()
+    click.echo(f"Controller connected to {filepath}")
+    click.echo("Press Ctrl+C to stop")
 
-    @app.post('/update')
-    def update(new_input: ControllerInput,
-               down: float = 0.1,
-               up: float = 0.1):
-        try:
-            # Capture the previous state, update to new state
-            previous_input = controller.controller_input
-            controller.controller_input = new_input
-            time.sleep(down)
-            # Return to the previous state
-            controller.controller_input = previous_input
-            time.sleep(up)
-            return {
-                "status": "success"
-            }
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    try:
+        # Keep the main thread alive so daemon threads can run
+        # This matches Go's behavior where Connect() starts goroutines
+        # and the main program blocks until interrupted
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        click.echo("\nShutting down...")
+        controller.close()
 
 
 if __name__ == "__main__":
     main()
-    print('Here')
