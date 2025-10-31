@@ -11,6 +11,7 @@ fastapi = {extras = ["standard"], version = "^0.120.3"}
 loguru = "^0.7.3"
 requests = "^2.32.5"
 click = "^8.3.0"
+httpx = "^0.28.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.2"
