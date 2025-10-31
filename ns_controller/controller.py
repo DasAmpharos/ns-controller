@@ -58,7 +58,6 @@ class ControllerInput(BaseModel):
 
 
 class Controller:
-    logger: Final = logging.getLogger(__name__)
     SPI_ROM_DATA: Final = load_spi_rom_data()
 
     def __init__(self):
@@ -91,7 +90,7 @@ class Controller:
 
             while not self.stop_comm.is_set():
                 n = self.fp.readinto(buf)
-                logger.info("read: %s %s", buf[:n].hex(), None)
+                logger.info("read: %s", buf[:n].hex())
 
                 match buf[0]:
                     case 0x80:
