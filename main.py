@@ -1,6 +1,8 @@
+import os.path
 import time
 
-from fastapi import FastAPI
+import click
+from fastapi import FastAPI, HTTPException
 
 from ns_controller.controller import Controller, ControllerInput
 
@@ -12,14 +14,10 @@ app = FastAPI()
 
 
 @app.post('/update')
-def update(new_input: ControllerInput,
-           down: float | None = None):
+def update(new_input: ControllerInput):
     previous_input = controller.controller_input
     controller.controller_input = new_input
-    if down is not None and down > 0:
-        time.sleep(down)
-        controller.controller_input = previous_input
-        time.sleep(0.1)
     return {
-        "status": "success"
+        "status": "success",
+        "previous_input": previous_input.model_dump()
     }
