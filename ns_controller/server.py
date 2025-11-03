@@ -4,9 +4,9 @@ from typing import Final
 import click
 import grpc
 
-from .ns_controller_pb2 import Ack, ControllerState
-from .ns_controller_pb2_grpc import NsControllerServicer, add_NsControllerServicer_to_server
 from ns_controller.controller import Controller
+from ns_controller.pb.ns_controller_pb2 import ControllerState, Ack
+from ns_controller.pb.ns_controller_pb2_grpc import NsControllerServicer, add_NsControllerServicer_to_server
 
 DEFAULT_HOST: Final = "[::]"
 DEFAULT_PORT: Final = 50051
