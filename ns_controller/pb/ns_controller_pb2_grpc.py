@@ -37,12 +37,12 @@ class NsControllerStub(object):
             channel: A grpc.Channel.
         """
         self.SetState = channel.unary_unary(
-                '/ns_controller.v1.NsController/SetState',
+                '/controller.v1.NsController/SetState',
                 request_serializer=ns__controller__pb2.ControllerState.SerializeToString,
                 response_deserializer=ns__controller__pb2.Ack.FromString,
                 _registered_method=True)
         self.StreamState = channel.stream_unary(
-                '/ns_controller.v1.NsController/StreamState',
+                '/controller.v1.NsController/StreamState',
                 request_serializer=ns__controller__pb2.ControllerState.SerializeToString,
                 response_deserializer=ns__controller__pb2.Ack.FromString,
                 _registered_method=True)
@@ -83,9 +83,9 @@ def add_NsControllerServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'ns_controller.v1.NsController', rpc_method_handlers)
+            'controller.v1.NsController', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('ns_controller.v1.NsController', rpc_method_handlers)
+    server.add_registered_method_handlers('controller.v1.NsController', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -108,7 +108,7 @@ class NsController(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/ns_controller.v1.NsController/SetState',
+            '/controller.v1.NsController/SetState',
             ns__controller__pb2.ControllerState.SerializeToString,
             ns__controller__pb2.Ack.FromString,
             options,
@@ -135,7 +135,7 @@ class NsController(object):
         return grpc.experimental.stream_unary(
             request_iterator,
             target,
-            '/ns_controller.v1.NsController/StreamState',
+            '/controller.v1.NsController/StreamState',
             ns__controller__pb2.ControllerState.SerializeToString,
             ns__controller__pb2.Ack.FromString,
             options,
