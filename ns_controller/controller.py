@@ -1,33 +1,13 @@
 import functools
 import threading
 import time
-from enum import IntEnum
 from pathlib import Path
 from types import MappingProxyType
 from typing import Final
 
 from loguru import logger
-from pydantic import BaseModel, Field
 
-class Button(IntEnum):
-    A = 0
-    B = 1
-    X = 2
-    Y = 3
-    L = 4
-    R = 5
-    ZL = 6
-    ZR = 7
-    PLUS = 8
-    MINUS = 9
-    CAPTURE = 10
-    HOME = 11
-
-class DPadButton(IntEnum):
-    UP = 0
-    DOWN = 1
-    LEFT = 2
-    RIGHT = 3
+from .ns_controller_pb2 import ControllerState, Button
 
 
 @functools.cache
@@ -39,49 +19,11 @@ def load_spi_rom_data() -> MappingProxyType[int, bytes]:
     })
 
 
-class ControllerInput(BaseModel):
-    class Buttons(BaseModel):
-        a: bool = False
-        b: bool = False
-        x: bool = False
-        y: bool = False
-        # shoulders
-        l: bool = False
-        r: bool = False
-        # triggers
-        zl: bool = False
-        zr: bool = False
-
-        minus: bool = False
-        plus: bool = False
-        home: bool = False
-        capture: bool = False
-
-    class DPad(BaseModel):
-        up: bool = False
-        down: bool = False
-        left: bool = False
-        right: bool = False
-
-    class Sticks(BaseModel):
-        class Axis(BaseModel):
-            x: float = 0.0
-            y: float = 0.0
-            pressed: bool = False
-
-        ls: Axis = Field(default_factory=Axis)
-        rs: Axis = Field(default_factory=Axis)
-
-    buttons: Buttons = Field(default_factory=Buttons)
-    sticks: Sticks = Field(default_factory=Sticks)
-    dpad: DPad = Field(default_factory=DPad)
-
-
 class Controller:
     SPI_ROM_DATA: Final = load_spi_rom_data()
 
     def __init__(self):
-        self.controller_input = ControllerInput()
+        self.state = ControllerState()
 
         self.fp = None
         self.stop_comm: Final = threading.Event()
@@ -155,7 +97,8 @@ class Controller:
                                     data = self.SPI_ROM_DATA.get(buf[12], None)
                                     if data:
                                         self.uart(True, buf[10], buf[11:16] + data[buf[11]:buf[11] + buf[15]])
-                                        logger.info(f"Read SPI address: {buf[12]:02x}{buf[11]:02x}[{buf[15]}] {data[buf[11]:buf[11] + buf[15]]}")
+                                        logger.info(
+                                            f"Read SPI address: {buf[12]:02x}{buf[11]:02x}[{buf[15]}] {data[buf[11]:buf[11] + buf[15]]}")
                                     else:
                                         self.uart(False, buf[10], bytes([]))
                                         logger.info(f"Unknown SPI address: {buf[12]:02x}[{buf[15]}]")
@@ -230,41 +173,41 @@ class Controller:
 
         # Named 'left' to match button byte position (Go calls this 'left')
         left = (
-                bit(0, self.controller_input.buttons.y) |
-                bit(1, self.controller_input.buttons.x) |
-                bit(2, self.controller_input.buttons.b) |
-                bit(3, self.controller_input.buttons.a) |
-                bit(6, self.controller_input.buttons.r) |
-                bit(7, self.controller_input.buttons.zr)
+                bit(0, bool(self.state.buttons.mask >> Button.Y & 1)) |
+                bit(1, bool(self.state.buttons.mask >> Button.X & 1)) |
+                bit(2, bool(self.state.buttons.mask >> Button.B & 1)) |
+                bit(3, bool(self.state.buttons.mask >> Button.A & 1)) |
+                bit(6, bool(self.state.buttons.mask >> Button.R & 1)) |
+                bit(7, bool(self.state.buttons.mask >> Button.ZR & 1))
         )
         center = (
-                bit(0, self.controller_input.buttons.minus) |
-                bit(1, self.controller_input.buttons.plus) |
-                bit(2, self.controller_input.sticks.rs.pressed) |
-                bit(3, self.controller_input.sticks.ls.pressed) |
-                bit(4, self.controller_input.buttons.home) |
-                bit(5, self.controller_input.buttons.capture)
+                bit(0, bool(self.state.buttons.mask >> Button.MINUS & 1)) |
+                bit(1, bool(self.state.buttons.mask >> Button.PLUS & 1)) |
+                bit(2, bool(self.state.buttons.mask >> Button.R_STICK & 1)) |
+                bit(3, bool(self.state.buttons.mask >> Button.L_STICK & 1)) |
+                bit(4, bool(self.state.buttons.mask >> Button.HOME & 1)) |
+                bit(5, bool(self.state.buttons.mask >> Button.CAPTURE & 1))
         )
         # Named 'right' to match button byte position (Go calls this 'right')
         right = (
-                bit(0, self.controller_input.dpad.down) |
-                bit(1, self.controller_input.dpad.up) |
-                bit(2, self.controller_input.dpad.right) |
-                bit(3, self.controller_input.dpad.left) |
-                bit(6, self.controller_input.buttons.l) |
-                bit(7, self.controller_input.buttons.zl)
+                bit(0, bool(self.state.buttons.mask >> Button.DPAD_DOWN & 1)) |
+                bit(1, bool(self.state.buttons.mask >> Button.DPAD_UP & 1)) |
+                bit(2, bool(self.state.buttons.mask >> Button.DPAD_RIGHT & 1)) |
+                bit(3, bool(self.state.buttons.mask >> Button.DPAD_LEFT & 1)) |
+                bit(6, bool(self.state.buttons.mask >> Button.L & 1)) |
+                bit(7, bool(self.state.buttons.mask >> Button.ZL & 1))
         )
 
-        lx = int(round((1 + self.controller_input.sticks.ls.x) * 2047.5))
-        ly = int(round((1 + self.controller_input.sticks.ls.y) * 2047.5))
-        rx = int(round((1 + self.controller_input.sticks.rs.x) * 2047.5))
-        ry = int(round((1 + self.controller_input.sticks.rs.y) * 2047.5))
+        lx = int(round((1 + self.state.ls.x) * 2047.5))
+        ly = int(round((1 + self.state.ls.y) * 2047.5))
+        rx = int(round((1 + self.state.rs.x or 0.0) * 2047.5))
+        ry = int(round((1 + self.state.rs.y or 0.0) * 2047.5))
 
         left_stick = pack_shorts(lx, ly)
         right_stick = pack_shorts(rx, ry)
 
         return bytes([0x81, left, center, right, left_stick[0], left_stick[1],
-                     left_stick[2], right_stick[0], right_stick[1], right_stick[2], 0x00])
+                      left_stick[2], right_stick[0], right_stick[1], right_stick[2], 0x00])
 
     def close(self):
         if self.fp is None:

@@ -202,10 +202,13 @@ def wz_20_runaround(client: NsControllerClient):
 
 
 def wz_20_alphas(client: NsControllerClient, resets: int = 0):
-    macro_start = time.time()
     try:
         while True:
             resets += 1
+            client.ls.update(x=0.1, y=1)
+            client.buttons.b.click()
+
+
             client.send_input(
                 controller_input=ControllerInput(
                     sticks=ControllerInput.Sticks(
