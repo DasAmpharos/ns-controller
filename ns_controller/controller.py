@@ -1,12 +1,33 @@
 import functools
 import threading
 import time
+from enum import IntEnum
 from pathlib import Path
 from types import MappingProxyType
 from typing import Final
 
 from loguru import logger
 from pydantic import BaseModel, Field
+
+class Button(IntEnum):
+    A = 0
+    B = 1
+    X = 2
+    Y = 3
+    L = 4
+    R = 5
+    ZL = 6
+    ZR = 7
+    PLUS = 8
+    MINUS = 9
+    CAPTURE = 10
+    HOME = 11
+
+class DPadButton(IntEnum):
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
 
 
 @functools.cache
