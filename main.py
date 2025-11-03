@@ -12,6 +12,14 @@ controller.connect(target)
 
 app = FastAPI()
 
+@app.post("/clear")
+def clear():
+    previous_input = controller.controller_input
+    controller.controller_input = ControllerInput()
+    return {
+        "status": "success",
+        "previous_input": previous_input.model_dump()
+    }
 
 @app.post('/update')
 def update(new_input: ControllerInput):

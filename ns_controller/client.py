@@ -10,7 +10,8 @@ class NsControllerClient:
         self.client = httpx.Client(base_url=f"{scheme}://{host}:{port}", timeout=None)
 
     def clear(self, up: float | None = 0.1):
-        self.client.post("/update", json=ControllerInput().model_dump())
+        controller_input = ControllerInput()
+        self.client.post("/update", json=controller_input.model_dump())
         if up is not None and up > 0:
             time.sleep(up)
 
