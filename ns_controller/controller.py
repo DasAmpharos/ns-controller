@@ -7,7 +7,7 @@ from typing import Final
 
 from loguru import logger
 
-from .ns_controller_pb2 import ControllerState, Button
+from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
 
 
 @functools.cache
