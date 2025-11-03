@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package switchctl.v1;
+package ns_controller.v1;
 
 // --- Inputs ---
 
