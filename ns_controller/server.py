@@ -4,24 +4,24 @@ from typing import Final
 import click
 import grpc
 
-import ns_controller_pb2
-import ns_controller_pb2_grpc
+from .ns_controller_pb2 import Ack, ControllerState
+from .ns_controller_pb2_grpc import NsControllerServicer, add_NsControllerServicer_to_server
 from ns_controller.controller import Controller
 
 DEFAULT_HOST: Final = "[::]"
 DEFAULT_PORT: Final = 50051
 
 
-class NsControllerServicer(ns_controller_pb2_grpc.NsControllerServicer):
+class NsControllerServicerImpl(NsControllerServicer):
     def __init__(self):
         self.controller = Controller()
         self.controller.connect("/dev/hidg0")
 
-    def SetState(self, request: ns_controller_pb2.ControllerState, context):
+    def SetState(self, request: ControllerState, context):
         # Implement your logic to handle SetState requests here
         previous_state = self.controller.state
         self.controller.state = request
-        return ns_controller_pb2.Ack(
+        return Ack(
             success=True,
             previous_state=previous_state
         )
@@ -42,7 +42,7 @@ def cli(host: str, port: int):
 
 def main(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    ns_controller_pb2_grpc.add_NsControllerServicer_to_server(NsControllerServicer(), server)
+    add_NsControllerServicer_to_server(NsControllerServicerImpl(), server)
     server.add_insecure_port(f"{host}:{port}")
     server.start()
     return server
