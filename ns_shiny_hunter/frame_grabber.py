@@ -1,3 +1,4 @@
+import os
 import threading
 from collections import deque
 from typing import Final
@@ -29,20 +30,27 @@ class FrameGrabber:
         self.video_capture.set(cv2.CAP_PROP_FPS, fps)
 
         self.video_capture_thread: Final = threading.Thread(target=self.run)
-        self.running: Final = AtomicValue(False)
+        self.running: threading.Event = threading.Event()
 
         self.frame: Final = AtomicValue(self.read_frame())
         self.frame_buffer_lock: Final = threading.Lock()
         self.frame_buffer = deque(maxlen=fps * 15)
 
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
     def start(self):
-        if self.running.compare_and_set(False, True):
-            self.video_capture_thread.start()
+        self.running.clear()
+        self.video_capture_thread.start()
 
     def stop(self):
-        if self.running.compare_and_set(True, False):
-            self.video_capture_thread.join()
-            self.video_capture.release()
+        self.running.set()
+        self.video_capture_thread.join()
+        self.video_capture.release()
 
     def dump_buffer(self, output_path: str):
         with self.frame_buffer_lock:
@@ -58,14 +66,24 @@ class FrameGrabber:
         logger.info(f'Dumped frame buffer to {output_path}')
 
     def run(self):
-        while self.running.get():
+        frames = 0
+        while not self.running.is_set():
             frame = self.read_frame()
             if frame is not None:
                 self.frame.set(frame)
             if self.imshow:
                 cv2.imshow('Frame Grabber', frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.running.set(False)
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord('s'):
+                    filepath = os.path.join("frames", f'frame-{frames}.jpg')
+                    filepath = os.path.abspath(filepath)
+                    dirname = os.path.dirname(filepath)
+                    os.makedirs(dirname, exist_ok=True)
+                    cv2.imwrite(filepath, frame)
+                    frames += 1
+                    continue
+                if key == ord('q'):
+                    self.running.set()
                     break
             with self.frame_buffer_lock:
                 if len(self.frame_buffer) == self.frame_buffer.maxlen:
