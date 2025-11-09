@@ -1,27 +1,14 @@
-import functools
 import threading
 import time
-from pathlib import Path
-from types import MappingProxyType
 from typing import Final
 
 from loguru import logger
 
+from ns_controller import spi_rom_data
 from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
 
 
-@functools.cache
-def load_spi_rom_data() -> MappingProxyType[int, bytes]:
-    directory = Path(__file__).parent / "spi_rom_data"
-    return MappingProxyType({
-        int(bin_file.stem, 16): bin_file.read_bytes()
-        for bin_file in directory.glob("*.bin")
-    })
-
-
 class Controller:
-    SPI_ROM_DATA: Final = load_spi_rom_data()
-
     def __init__(self):
         self.state = ControllerState()
 
@@ -94,7 +81,7 @@ class Controller:
                                 case 0x04:
                                     self.uart(True, buf[10], bytes([]))
                                 case 0x10:
-                                    data = self.SPI_ROM_DATA.get(buf[12], None)
+                                    data = spi_rom_data.get(buf[12])
                                     if data:
                                         self.uart(True, buf[10], buf[11:16] + data[buf[11]:buf[11] + buf[15]])
                                         logger.info(
@@ -173,29 +160,29 @@ class Controller:
 
         # Named 'left' to match button byte position (Go calls this 'left')
         left = (
-                bit(0, bool(self.state.buttons.mask >> Button.Y & 1)) |
-                bit(1, bool(self.state.buttons.mask >> Button.X & 1)) |
-                bit(2, bool(self.state.buttons.mask >> Button.B & 1)) |
-                bit(3, bool(self.state.buttons.mask >> Button.A & 1)) |
-                bit(6, bool(self.state.buttons.mask >> Button.R & 1)) |
-                bit(7, bool(self.state.buttons.mask >> Button.ZR & 1))
+                bit(0, bool(self.state.buttons >> Button.Y & 1)) |
+                bit(1, bool(self.state.buttons >> Button.X & 1)) |
+                bit(2, bool(self.state.buttons >> Button.B & 1)) |
+                bit(3, bool(self.state.buttons >> Button.A & 1)) |
+                bit(6, bool(self.state.buttons >> Button.R & 1)) |
+                bit(7, bool(self.state.buttons >> Button.ZR & 1))
         )
         center = (
-                bit(0, bool(self.state.buttons.mask >> Button.MINUS & 1)) |
-                bit(1, bool(self.state.buttons.mask >> Button.PLUS & 1)) |
-                bit(2, bool(self.state.buttons.mask >> Button.R_STICK & 1)) |
-                bit(3, bool(self.state.buttons.mask >> Button.L_STICK & 1)) |
-                bit(4, bool(self.state.buttons.mask >> Button.HOME & 1)) |
-                bit(5, bool(self.state.buttons.mask >> Button.CAPTURE & 1))
+                bit(0, bool(self.state.buttons >> Button.MINUS & 1)) |
+                bit(1, bool(self.state.buttons >> Button.PLUS & 1)) |
+                bit(2, bool(self.state.buttons >> Button.R_STICK & 1)) |
+                bit(3, bool(self.state.buttons >> Button.L_STICK & 1)) |
+                bit(4, bool(self.state.buttons >> Button.HOME & 1)) |
+                bit(5, bool(self.state.buttons >> Button.CAPTURE & 1))
         )
         # Named 'right' to match button byte position (Go calls this 'right')
         right = (
-                bit(0, bool(self.state.buttons.mask >> Button.DPAD_DOWN & 1)) |
-                bit(1, bool(self.state.buttons.mask >> Button.DPAD_UP & 1)) |
-                bit(2, bool(self.state.buttons.mask >> Button.DPAD_RIGHT & 1)) |
-                bit(3, bool(self.state.buttons.mask >> Button.DPAD_LEFT & 1)) |
-                bit(6, bool(self.state.buttons.mask >> Button.L & 1)) |
-                bit(7, bool(self.state.buttons.mask >> Button.ZL & 1))
+                bit(0, bool(self.state.buttons >> Button.DPAD_DOWN & 1)) |
+                bit(1, bool(self.state.buttons >> Button.DPAD_UP & 1)) |
+                bit(2, bool(self.state.buttons >> Button.DPAD_RIGHT & 1)) |
+                bit(3, bool(self.state.buttons >> Button.DPAD_LEFT & 1)) |
+                bit(6, bool(self.state.buttons >> Button.L & 1)) |
+                bit(7, bool(self.state.buttons >> Button.ZL & 1))
         )
 
         lx = int(round((1 + self.state.ls.x) * 2047.5))

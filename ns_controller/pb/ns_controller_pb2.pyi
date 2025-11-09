@@ -1,15 +1,13 @@
-from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from collections.abc import Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Button(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
-    BUTTON_UNSPECIFIED: _ClassVar[Button]
     A: _ClassVar[Button]
     B: _ClassVar[Button]
     X: _ClassVar[Button]
@@ -30,7 +28,6 @@ class Button(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     DPAD_RIGHT: _ClassVar[Button]
     SL: _ClassVar[Button]
     SR: _ClassVar[Button]
-BUTTON_UNSPECIFIED: Button
 A: Button
 B: Button
 X: Button
@@ -52,14 +49,6 @@ DPAD_RIGHT: Button
 SL: Button
 SR: Button
 
-class Buttons(_message.Message):
-    __slots__ = ("mask", "pressed")
-    MASK_FIELD_NUMBER: _ClassVar[int]
-    PRESSED_FIELD_NUMBER: _ClassVar[int]
-    mask: int
-    pressed: _containers.RepeatedScalarFieldContainer[Button]
-    def __init__(self, mask: _Optional[int] = ..., pressed: _Optional[_Iterable[_Union[Button, str]]] = ...) -> None: ...
-
 class Stick(_message.Message):
     __slots__ = ("x", "y")
     X_FIELD_NUMBER: _ClassVar[int]
@@ -73,10 +62,10 @@ class ControllerState(_message.Message):
     BUTTONS_FIELD_NUMBER: _ClassVar[int]
     LS_FIELD_NUMBER: _ClassVar[int]
     RS_FIELD_NUMBER: _ClassVar[int]
-    buttons: Buttons
+    buttons: int
     ls: Stick
     rs: Stick
-    def __init__(self, buttons: _Optional[_Union[Buttons, _Mapping]] = ..., ls: _Optional[_Union[Stick, _Mapping]] = ..., rs: _Optional[_Union[Stick, _Mapping]] = ...) -> None: ...
+    def __init__(self, buttons: _Optional[int] = ..., ls: _Optional[_Union[Stick, _Mapping]] = ..., rs: _Optional[_Union[Stick, _Mapping]] = ...) -> None: ...
 
 class Ack(_message.Message):
     __slots__ = ("success", "previous_state")

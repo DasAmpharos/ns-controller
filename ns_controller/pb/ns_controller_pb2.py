@@ -24,25 +24,21 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ns_controller.proto\x12\x10ns_controller.pb\"F\n\x07\x42uttons\x12\x0c\n\x04mask\x18\x01 \x01(\x04\x12-\n\x07pressed\x18\x02 \x03(\x0e\x32\x18.ns_controller.pb.ButtonB\x02\x10\x01\"\x1d\n\x05Stick\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"\x87\x01\n\x0f\x43ontrollerState\x12*\n\x07\x62uttons\x18\x01 \x01(\x0b\x32\x19.ns_controller.pb.Buttons\x12#\n\x02ls\x18\x02 \x01(\x0b\x32\x17.ns_controller.pb.Stick\x12#\n\x02rs\x18\x03 \x01(\x0b\x32\x17.ns_controller.pb.Stick\"Q\n\x03\x41\x63k\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x39\n\x0eprevious_state\x18\x02 \x01(\x0b\x32!.ns_controller.pb.ControllerState*\xeb\x01\n\x06\x42utton\x12\x16\n\x12\x42UTTON_UNSPECIFIED\x10\x00\x12\x05\n\x01\x41\x10\x01\x12\x05\n\x01\x42\x10\x02\x12\x05\n\x01X\x10\x03\x12\x05\n\x01Y\x10\x04\x12\x05\n\x01L\x10\x05\x12\x05\n\x01R\x10\x06\x12\x06\n\x02ZL\x10\x07\x12\x06\n\x02ZR\x10\x08\x12\x0b\n\x07L_STICK\x10\t\x12\x0b\n\x07R_STICK\x10\n\x12\x08\n\x04PLUS\x10\x0b\x12\t\n\x05MINUS\x10\x0c\x12\x08\n\x04HOME\x10\r\x12\x0b\n\x07\x43\x41PTURE\x10\x0e\x12\x0b\n\x07\x44PAD_UP\x10\x0f\x12\r\n\tDPAD_DOWN\x10\x10\x12\r\n\tDPAD_LEFT\x10\x11\x12\x0e\n\nDPAD_RIGHT\x10\x12\x12\x06\n\x02SL\x10\x13\x12\x06\n\x02SR\x10\x14\x32\x9f\x01\n\x0cNsController\x12\x44\n\x08SetState\x12!.ns_controller.pb.ControllerState\x1a\x15.ns_controller.pb.Ack\x12I\n\x0bStreamState\x12!.ns_controller.pb.ControllerState\x1a\x15.ns_controller.pb.Ack(\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ns_controller.proto\x12\x10ns_controller.pb\"\x1d\n\x05Stick\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"l\n\x0f\x43ontrollerState\x12\x0f\n\x07\x62uttons\x18\x01 \x01(\x04\x12#\n\x02ls\x18\x02 \x01(\x0b\x32\x17.ns_controller.pb.Stick\x12#\n\x02rs\x18\x03 \x01(\x0b\x32\x17.ns_controller.pb.Stick\"Q\n\x03\x41\x63k\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x39\n\x0eprevious_state\x18\x02 \x01(\x0b\x32!.ns_controller.pb.ControllerState*\xd3\x01\n\x06\x42utton\x12\x05\n\x01\x41\x10\x00\x12\x05\n\x01\x42\x10\x01\x12\x05\n\x01X\x10\x02\x12\x05\n\x01Y\x10\x03\x12\x05\n\x01L\x10\x04\x12\x05\n\x01R\x10\x05\x12\x06\n\x02ZL\x10\x06\x12\x06\n\x02ZR\x10\x07\x12\x0b\n\x07L_STICK\x10\x08\x12\x0b\n\x07R_STICK\x10\t\x12\x08\n\x04PLUS\x10\n\x12\t\n\x05MINUS\x10\x0b\x12\x08\n\x04HOME\x10\x0c\x12\x0b\n\x07\x43\x41PTURE\x10\r\x12\x0b\n\x07\x44PAD_UP\x10\x0e\x12\r\n\tDPAD_DOWN\x10\x0f\x12\r\n\tDPAD_LEFT\x10\x10\x12\x0e\n\nDPAD_RIGHT\x10\x11\x12\x06\n\x02SL\x10\x12\x12\x06\n\x02SR\x10\x13\x32\x9f\x01\n\x0cNsController\x12\x44\n\x08SetState\x12!.ns_controller.pb.ControllerState\x1a\x15.ns_controller.pb.Ack\x12I\n\x0bStreamState\x12!.ns_controller.pb.ControllerState\x1a\x15.ns_controller.pb.Ack(\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ns_controller_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_BUTTONS'].fields_by_name['pressed']._loaded_options = None
-  _globals['_BUTTONS'].fields_by_name['pressed']._serialized_options = b'\020\001'
-  _globals['_BUTTON']._serialized_start=366
-  _globals['_BUTTON']._serialized_end=601
-  _globals['_BUTTONS']._serialized_start=41
-  _globals['_BUTTONS']._serialized_end=111
-  _globals['_STICK']._serialized_start=113
-  _globals['_STICK']._serialized_end=142
-  _globals['_CONTROLLERSTATE']._serialized_start=145
-  _globals['_CONTROLLERSTATE']._serialized_end=280
-  _globals['_ACK']._serialized_start=282
-  _globals['_ACK']._serialized_end=363
-  _globals['_NSCONTROLLER']._serialized_start=604
-  _globals['_NSCONTROLLER']._serialized_end=763
+  _globals['_BUTTON']._serialized_start=266
+  _globals['_BUTTON']._serialized_end=477
+  _globals['_STICK']._serialized_start=41
+  _globals['_STICK']._serialized_end=70
+  _globals['_CONTROLLERSTATE']._serialized_start=72
+  _globals['_CONTROLLERSTATE']._serialized_end=180
+  _globals['_ACK']._serialized_start=182
+  _globals['_ACK']._serialized_end=263
+  _globals['_NSCONTROLLER']._serialized_start=480
+  _globals['_NSCONTROLLER']._serialized_end=639
 # @@protoc_insertion_point(module_scope)

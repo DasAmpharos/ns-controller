@@ -6,50 +6,37 @@ package ns_controller.pb;
 
 // Bit assignments for Buttons.mask (bit N corresponds to (value N))
 enum Button {
-  // 0 is reserved in proto3 enums; we keep it unused.
-  BUTTON_UNSPECIFIED = 0;
-
   // Face
-  A        = 1;
-  B        = 2;
-  X        = 3;
-  Y        = 4;
+  A        = 0;
+  B        = 1;
+  X        = 2;
+  Y        = 3;
 
   // Shoulders (Z* are digital on Switch)
-  L        = 5;
-  R        = 6;
-  ZL       = 7;
-  ZR       = 8;
+  L        = 4;
+  R        = 5;
+  ZL       = 6;
+  ZR       = 7;
 
   // Stick-clicks
-  L_STICK  = 9;   // L3
-  R_STICK  = 10;  // R3
+  L_STICK  = 8;   // L3
+  R_STICK  = 9;  // R3
 
   // System
-  PLUS     = 11;
-  MINUS    = 12;
-  HOME     = 13;
-  CAPTURE  = 14;
+  PLUS     = 10;
+  MINUS    = 11;
+  HOME     = 12;
+  CAPTURE  = 13;
 
   // D-Pad (treated as 4 digital buttons; host may also synthesize a hat)
-  DPAD_UP    = 15;
-  DPAD_DOWN  = 16;
-  DPAD_LEFT  = 17;
-  DPAD_RIGHT = 18;
+  DPAD_UP    = 14;
+  DPAD_DOWN  = 15;
+  DPAD_LEFT  = 16;
+  DPAD_RIGHT = 17;
 
   // Joy-Con SL/SR (useful when emulating single Joy-Con)
-  SL       = 19;
-  SR       = 20;
-}
-
-// Compact digital buttons representation.
-// By default we use a 64-bit mask for simplicity/room to grow.
-message Buttons {
-  // Bitmask where bit index == enum numeric value (e.g., A=1 -> bit 1).
-  // Example: (mask & (1 << A)) != 0 means "A is pressed".
-  uint64 mask = 1;
-  // Optional: explicit pressed list (handy for debugging). Avoid in hot paths.
-  repeated Button pressed = 2 [packed = true];
+  SL       = 18;
+  SR       = 19;
 }
 
 // Analog stick with signed 16-bit style ranges.
@@ -63,7 +50,7 @@ message Stick {
 // Full controller state at an instant.
 message ControllerState {
   // Digital buttons
-  Buttons buttons = 1;
+  uint64 buttons = 1;
   // Analog sticks (use your device’s calibration before populating these)
   Stick ls  = 2;
   Stick rs = 3;
