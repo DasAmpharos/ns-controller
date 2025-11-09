@@ -25,6 +25,11 @@ class NsControllerClient:
             else:
                 self.current_state.buttons &= ~(1 << button)
 
+    def send(self):
+        debug(self.current_state)
+        ack = self.stub.SetState(self.current_state)
+        print(f'is_success={ack.success}')
+
     def press(self, buttons: list[Button], send: bool = True, post_delay: float | None = 0.1) -> None:
         """
         Press buttons (adds to currently pressed buttons).
@@ -35,7 +40,7 @@ class NsControllerClient:
         """
         self._update_buttons(buttons, True)
         if send:
-            self.stub.SetState(self.current_state)
+            self.send()
         if post_delay:
             time.sleep(post_delay)
 
@@ -49,7 +54,7 @@ class NsControllerClient:
         """
         self._update_buttons(buttons, False)
         if send:
-            self.stub.SetState(self.current_state)
+            self.send()
         if post_delay:
             time.sleep(post_delay)
 
@@ -61,11 +66,8 @@ class NsControllerClient:
             down: Time in seconds to hold the buttons down
             post_delay: Optional delay in seconds after releasing the buttons
         """
-        self.press(buttons, send=True, post_delay=None)
-        time.sleep(down)
-        self.release(buttons, send=True, post_delay=None)
-        if post_delay:
-            time.sleep(post_delay)
+        self.press(buttons, send=True, post_delay=down)
+        self.release(buttons, send=True, post_delay=post_delay)
 
     def set_stick(self,
                   ls_x: float = 0.0, ls_y: float = 0.0,
@@ -87,7 +89,7 @@ class NsControllerClient:
         self.current_state.rs.x = rs_x
         self.current_state.rs.y = rs_y
         if send:
-            self.stub.SetState(self.current_state)
+            self.send()
         if post_delay:
             time.sleep(post_delay)
 
@@ -101,7 +103,7 @@ class NsControllerClient:
         """
         self.current_state.CopyFrom(controller_state)
         if send:
-            self.stub.SetState(self.current_state)
+            self.send()
         if post_delay:
             time.sleep(post_delay)
 
@@ -139,7 +141,7 @@ class NsControllerClient:
         if rs_y is not None:
             self.current_state.rs.y = rs_y
         if send:
-            self.stub.SetState(self.current_state)
+            self.send()
         if post_delay:
             time.sleep(post_delay)
 
@@ -150,10 +152,27 @@ class NsControllerClient:
             post_delay: Optional delay in seconds after clearing the state
         """
         self.current_state = ControllerState()
-        self.stub.SetState(self.current_state)
+        self.send()
         if post_delay:
             time.sleep(post_delay)
 
     def close(self):
         """Close the gRPC channel."""
         self.channel.close()
+
+
+def debug(state: ControllerState):
+    print({
+        "buttons": {
+            "mask": state.buttons,
+            "state": {name: (state.buttons & (1 << value)) != 0 for name, value in Button.items()}
+        },
+        "ls": {
+            "x": state.ls.x,
+            "y": state.ls.y
+        },
+        "rs": {
+            "x": state.rs.x,
+            "y": state.rs.y
+        }
+    })

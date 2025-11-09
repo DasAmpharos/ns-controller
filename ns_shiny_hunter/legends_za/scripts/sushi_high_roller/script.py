@@ -1,4 +1,5 @@
 import time
+import traceback
 from types import MappingProxyType
 from typing import Final
 
@@ -140,12 +141,13 @@ class SushiHighRoller:
         while True:
             if SushiHighRollerReferenceFrames.POKEMON_CENTER_DIALOG_START.matches(self.frame_grabber.frame):
                 self.state = State.POKEMON_CENTER_DIALOG
+                self.controller.clear()
                 break
             time.sleep(0.1)
 
     def state_handler_pokemon_center_dialog(self):
         print('State.POKEMON_CENTER_DIALOG')
-        self.controller.click([Button.A], post_delay=2)
+        self.controller.click([Button.A], post_delay=1.5)
         self.controller.click([Button.A], post_delay=0.5)
 
         def select_option(option_index: int):
@@ -170,18 +172,17 @@ class SushiHighRoller:
 
     def sell_treasures(self):
         while True:
-            time.sleep(0.1)
+            time.sleep(0.5)
             item_name, item_quantity = self.detect_item(self.frame_grabber.frame)
             print(f'> Detected item: "{item_name}" x{item_quantity}')
-            if item_name and item_quantity:
-                # select item, select max quantity, offer items
-                self.controller.click([Button.A], post_delay=1)
-                self.controller.click([Button.DPAD_DOWN], post_delay=1)
-                self.controller.click([Button.A], post_delay=1)
-                self.controller.click([Button.A], post_delay=1)
-                self.controller.click([Button.A], post_delay=1)
-                continue
-            break
+            if not item_name and not item_quantity:
+                break
+            # select item, select max quantity, offer items
+            self.controller.click([Button.A], post_delay=1)
+            self.controller.click([Button.DPAD_DOWN], post_delay=1)
+            self.controller.click([Button.A], down=0.1, post_delay=1)
+            self.controller.click([Button.A], down=0.1, post_delay=1)
+            self.controller.click([Button.A], down=0.1, post_delay=1)
 
     # Returns one of the three option strings
     @staticmethod
@@ -209,10 +210,15 @@ class SushiHighRoller:
 
     @staticmethod
     def detect_item(frame: Frame) -> (str, str):
-        item_name = pytesseract.image_to_string(ITEM_NAME_FRAME_PROCESSOR.prepare_frame(frame), config='--psm 7')
-        item_quantity = pytesseract.image_to_string(ITEM_QUANTITY_FRAME_PROCESSOR.prepare_frame(frame),
-                                                    config='--psm 7 tessedit_char_whitelist=0123456789')
-        return item_name, item_quantity
+        try:
+            item_name = pytesseract.image_to_string(ITEM_NAME_FRAME_PROCESSOR.prepare_frame(frame), config='--psm 7')
+            item_quantity = pytesseract.image_to_string(ITEM_QUANTITY_FRAME_PROCESSOR.prepare_frame(frame),
+                                                        config='--psm 7 tessedit_char_whitelist=0123456789')
+            print(f'> Detected item name: "{item_name}" and quantity: "{item_quantity}"')
+            return item_name.strip(), item_quantity.strip()
+        except Exception:
+            traceback.print_exc()
+            return "", ""
 
     @staticmethod
     def detect_quantity_to_sell(frame: Frame) -> str:
