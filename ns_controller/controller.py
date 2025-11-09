@@ -185,8 +185,8 @@ class Controller:
                 bit(7, bool(self.state.buttons >> Button.ZL & 1))
         )
 
-        lx = int(round((1 + self.state.ls.x) * 2047.5))
-        ly = int(round((1 + self.state.ls.y) * 2047.5))
+        lx = int(round((1 + self.state.ls.x or 0.0) * 2047.5))
+        ly = int(round((1 + self.state.ls.y or 0.0) * 2047.5))
         rx = int(round((1 + self.state.rs.x or 0.0) * 2047.5))
         ry = int(round((1 + self.state.rs.y or 0.0) * 2047.5))
 
