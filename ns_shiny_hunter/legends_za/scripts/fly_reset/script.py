@@ -33,19 +33,19 @@ class FlyReset:
                         print('State.OVERWORLD')
                         print(f'Reset #{self.resets}...')
                         self.controller.click([Button.PLUS], down=0.1, post_delay=1)
-                        if LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame.get()):
+                        if LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
                             self.state = State.OPEN_MAP
                     case State.OPEN_MAP:
                         print('State.OPEN_MAP')
                         self.controller.set_stick(ls_x=self.action[0], ls_y=self.action[1], post_delay=self.action[2])
                         self.controller.set_stick(ls_x=0, ls_y=0, post_delay=1)
 
-                        if LegendsZAReferenceFrames.TRAVEL_HERE.matches(self.frame_grabber.frame.get()):
+                        if LegendsZAReferenceFrames.TRAVEL_HERE.matches(self.frame_grabber.frame):
                             self.state = State.TRAVEL_HERE
                     case State.TRAVEL_HERE:
                         print('State.TRAVEL_HERE')
                         self.controller.click([Button.A], down=0.1, post_delay=0.1)
-                        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame.get()):
+                        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
                             self.state = State.OVERWORLD
                             self.resets += 1
         except KeyboardInterrupt:

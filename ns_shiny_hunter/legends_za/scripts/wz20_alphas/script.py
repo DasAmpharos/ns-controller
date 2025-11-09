@@ -34,15 +34,15 @@ class WildZone20Alphas:
                         self.controller.clear(post_delay=0.1)
                         # interact with bench
                         self.controller.click([Button.A], down=0.1, post_delay=1)
-                        if ReferenceFrames.WHAT_A_NICE_BENCH.matches(self.frame_grabber.frame.get()):
+                        if ReferenceFrames.WHAT_A_NICE_BENCH.matches(self.frame_grabber.frame):
                             self.state = State.WHAT_A_NICE_BENCH
                     case State.WHAT_A_NICE_BENCH:
                         self.controller.click([Button.A], down=0.1, post_delay=0.1)
-                        if ReferenceFrames.HANG_OUT_HERE.matches(self.frame_grabber.frame.get()):
+                        if ReferenceFrames.HANG_OUT_HERE.matches(self.frame_grabber.frame):
                             self.state = State.HANG_OUT_HERE
                     case State.HANG_OUT_HERE:
                         self.controller.click([Button.A], down=0.1, post_delay=0.1)
-                        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame.get()):
+                        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
                             self.resets += 1
                             print(f"Reset #{self.resets}...")
                             self.state = State.OVERWORLD

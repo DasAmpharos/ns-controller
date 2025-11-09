@@ -6,7 +6,6 @@ from typing import Final
 import cv2
 from loguru import logger
 
-from .atomic import AtomicValue
 from .frame import Frame
 
 
@@ -15,8 +14,9 @@ class FrameGrabber:
                  source: int | str,
                  width: int = 1280,
                  height: int = 720,
-                 fps: int = 30,
-                 imshow: bool = True):
+                 fps: int = 60,
+                 imshow: bool = True,
+                 buffer_size: int = 30):
         self.source: Final = source
         self.width: Final = width
         self.height: Final = height
@@ -32,9 +32,8 @@ class FrameGrabber:
         self.video_capture_thread: Final = threading.Thread(target=self.run)
         self.running: threading.Event = threading.Event()
 
-        self.frame: Final = AtomicValue(self.read_frame())
+        self.frame_buffer: Final = deque(maxlen=buffer_size)
         self.frame_buffer_lock: Final = threading.Lock()
-        self.frame_buffer = deque(maxlen=fps * 15)
 
     def __enter__(self):
         self.start()
@@ -52,25 +51,16 @@ class FrameGrabber:
         self.video_capture_thread.join()
         self.video_capture.release()
 
-    def dump_buffer(self, output_path: str):
-        with self.frame_buffer_lock:
-            frame_buffer = self.frame_buffer
-            self.frame_buffer = deque(maxlen=self.fps * 15)
-
-        fourcc = cv2.VideoWriter.fourcc(*'X264')
-        video_writer = cv2.VideoWriter(output_path, fourcc, self.fps, (self.width, self.height))
-        while len(frame_buffer) > 0:
-            frame = frame_buffer.popleft()
-            video_writer.write(frame)
-        video_writer.release()
-        logger.info(f'Dumped frame buffer to {output_path}')
-
     def run(self):
         frames = 0
         while not self.running.is_set():
             frame = self.read_frame()
-            if frame is not None:
-                self.frame.set(frame)
+            if frame is None:
+                continue
+
+            with self.frame_buffer_lock:
+                self.frame_buffer.append(frame)
+
             if self.imshow:
                 cv2.imshow('Frame Grabber', frame)
                 key = cv2.waitKey(1) & 0xFF
@@ -81,16 +71,21 @@ class FrameGrabber:
                     os.makedirs(dirname, exist_ok=True)
                     cv2.imwrite(filepath, frame)
                     frames += 1
-                    continue
-                if key == ord('q'):
+                elif key == ord('q'):
                     self.running.set()
                     break
-            with self.frame_buffer_lock:
-                if len(self.frame_buffer) == self.frame_buffer.maxlen:
-                    self.frame_buffer.popleft()
-                self.frame_buffer.append(frame)
 
-    def read_frame(self) -> Frame:
+    @property
+    def frame(self) -> Frame | None:
+        with self.frame_buffer_lock:
+            return self.frame_buffer[-1] if self.frame_buffer else None
+
+    @property
+    def frames(self) -> list[Frame]:
+        with self.frame_buffer_lock:
+            return list(self.frame_buffer)
+
+    def read_frame(self) -> Frame | None:
         success, frame = self.video_capture.read()
         if not success:
             logger.error('Failed to read frame')

@@ -25,15 +25,15 @@ class BenchReset:
                         self.controller.set_stick(ls_y=-1, post_delay=0.2)
                         self.controller.set_stick(ls_y=0, post_delay=0.1)
                         self.controller.click([Button.A], down=0.1, post_delay=1)
-                        if BenchResetReferenceFrames.WHAT_A_NICE_BENCH.matches(self.frame_grabber.frame.get()):
+                        if BenchResetReferenceFrames.WHAT_A_NICE_BENCH.matches(self.frame_grabber.frame):
                             self.state = State.WHAT_A_NICE_BENCH
                     case State.WHAT_A_NICE_BENCH:
                         self.controller.click([Button.A], down=0.1, post_delay=0.1)
-                        if BenchResetReferenceFrames.HANG_OUT_HERE.matches(self.frame_grabber.frame.get()):
+                        if BenchResetReferenceFrames.HANG_OUT_HERE.matches(self.frame_grabber.frame):
                             self.state = State.HANG_OUT_HERE
                     case State.HANG_OUT_HERE:
                         self.controller.click([Button.A], down=0.1, post_delay=0.1)
-                        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame.get()):
+                        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
                             self.resets += 1
                             print(f"Reset #{self.resets}...")
                             self.state = State.OVERWORLD

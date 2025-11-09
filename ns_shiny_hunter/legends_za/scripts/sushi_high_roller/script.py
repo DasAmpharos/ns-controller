@@ -58,32 +58,29 @@ class SushiHighRoller:
             self.controller.set_stick(ls_x=0, post_delay=0.1)
         self.controller.click([Button.A])
 
-        frame = self.frame_grabber.frame.get()
-        if SushiHighRollerReferenceFrames.ENTRANCE_CONFIRMATION.matches(frame):
+        if SushiHighRollerReferenceFrames.ENTRANCE_CONFIRMATION.matches(self.frame_grabber.frame):
             self.state = State.ENTRANCE_CONFIRMATION
 
     def state_handler_entrance_confirmation(self):
         print('State.ENTRANCE_CONFIRMATION')
         self.controller.click([Button.A])
 
-        frame = self.frame_grabber.frame.get()
+        frame = self.frame_grabber.frame
         if SushiHighRollerReferenceFrames.CANNOT_AFFORD.matches(frame):
             self.state = State.CANNOT_AFFORD
-        if SushiHighRollerReferenceFrames.FOLLOW_ME.matches(frame):
+        elif SushiHighRollerReferenceFrames.FOLLOW_ME.matches(frame):
             self.state = State.FOLLOW_ME
 
     def state_handler_follow_me(self):
         print('State.FOLLOW_ME')
         self.controller.click([Button.A])
-
-        frame = self.frame_grabber.frame.get()
-        if SushiHighRollerReferenceFrames.BATTLE.matches(frame):
+        if SushiHighRollerReferenceFrames.BATTLE.matches(self.frame_grabber.frame):
             self.state = State.BATTLE
 
     def state_handler_battle(self):
         print('State.BATTLE')
-        if SushiHighRollerReferenceFrames.BATTLE.matches(self.frame_grabber.frame.get()):
-            frame = ATTACK_FRAME_PROCESSOR.prepare_frame(self.frame_grabber.frame.get())
+        if SushiHighRollerReferenceFrames.BATTLE.matches(self.frame_grabber.frame):
+            frame = ATTACK_FRAME_PROCESSOR.prepare_frame(self.frame_grabber.frame)
             text = pytesseract.image_to_string(frame)
             text = text.strip().lower()
             print(f'> Detected attack: "{text}"')
@@ -93,7 +90,7 @@ class SushiHighRoller:
                 time.sleep(0.5)
         self.controller.click([Button.A])
 
-        frame = self.frame_grabber.frame.get()
+        frame = self.frame_grabber.frame
         if SushiHighRollerReferenceFrames.OUTCOME_FAILURE.matches(frame):
             self.state = State.OUTCOME_FAILURE
         elif SushiHighRollerReferenceFrames.OUTCOME_SUCCESS.matches(frame):
@@ -102,41 +99,38 @@ class SushiHighRoller:
     def state_handler_outcome(self):
         print('State.OUTCOME_FAILURE | State.OUTCOME_SUCCESS')
         self.controller.click([Button.A])
-
-        frame = self.frame_grabber.frame.get()
-        if SushiHighRollerReferenceFrames.ENTRANCE_2.matches(frame):
+        if SushiHighRollerReferenceFrames.ENTRANCE_2.matches(self.frame_grabber.frame):
             self.state = State.ENTRANCE_2
 
     def state_handler_cannot_afford(self):
         print('State.CANNOT_AFFORD')
         while True:
             self.controller.click([Button.A])
-            frame = self.frame_grabber.frame.get()
-            if SushiHighRollerReferenceFrames.ENTRANCE_2.matches(frame):
+            if SushiHighRollerReferenceFrames.ENTRANCE_2.matches(self.frame_grabber.frame):
                 break
 
         # open map
         self.controller.click([Button.PLUS])
-        if LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame.get()):
+        if LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
             self.state = State.OPEN_MAP
 
     def state_handler_open_map(self):
         print('State.OPEN_MAP')
         self.controller.set_stick(ls_x=0.05, ls_y=0.8, post_delay=0.3)
         self.controller.clear(post_delay=1)
-        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER.matches(self.frame_grabber.frame.get()):
+        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER.matches(self.frame_grabber.frame):
             self.state = State.TRAVEL_TO_POKEMON_CENTER
 
     def state_handler_travel_here(self):
         print('State.TRAVEL_HERE')
         self.controller.click([Button.A])
-        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION.matches(self.frame_grabber.frame.get()):
+        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION.matches(self.frame_grabber.frame):
             self.state = State.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION
 
     def state_handler_travel_to_pokemon_center_confirmation(self):
         print('State.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION')
         self.controller.click([Button.A])
-        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame.get()):
+        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
             self.state = State.OVERWORLD_POKEMON_CENTER
 
     def state_handler_overworld_pokemon_center(self):
@@ -144,7 +138,7 @@ class SushiHighRoller:
         self.controller.set_stick(ls_y=1, post_delay=0.1)
         self.controller.click([Button.B])
         while True:
-            if SushiHighRollerReferenceFrames.POKEMON_CENTER_DIALOG_START.matches(self.frame_grabber.frame.get()):
+            if SushiHighRollerReferenceFrames.POKEMON_CENTER_DIALOG_START.matches(self.frame_grabber.frame):
                 self.state = State.POKEMON_CENTER_DIALOG
                 break
             time.sleep(0.1)
@@ -156,8 +150,7 @@ class SushiHighRoller:
 
         def select_option(option_index: int):
             while True:
-                frame = self.frame_grabber.frame.get()
-                frame = POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR.prepare_frame(frame)
+                frame = POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR.prepare_frame(self.frame_grabber.frame)
                 if self.detect_highlighted_option(frame, 3) == option_index:
                     self.controller.click([Button.A])
                     break
@@ -166,20 +159,19 @@ class SushiHighRoller:
         select_option(1)  # select "I'd like to do some shopping"
         select_option(1)  # select "I'd like to sell"
 
-        while not SushiHighRollerReferenceFrames.SELL_TREASURES.matches(self.frame_grabber.frame.get()):
+        while not SushiHighRollerReferenceFrames.SELL_TREASURES.matches(self.frame_grabber.frame):
             self.controller.click([Button.R], post_delay=0.5)
 
         self.sell_treasures()
         while True:
             self.controller.click([Button.B])
-            if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame.get()):
+            if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
                 break
 
     def sell_treasures(self):
         while True:
             time.sleep(0.1)
-            frame = self.frame_grabber.frame.get()
-            item_name, item_quantity = self.detect_item(frame)
+            item_name, item_quantity = self.detect_item(self.frame_grabber.frame)
             print(f'> Detected item: "{item_name}" x{item_quantity}')
             if item_name and item_quantity:
                 # select item, select max quantity, offer items

@@ -27,8 +27,7 @@ def main():
         with FrameGrabber(0, imshow=False) as frame_grabber:
             time.sleep(3)
             while True:
-                frame = frame_grabber.frame.get()
-                frames = SushiHighRoller.detect_item(frame)
+                frames = SushiHighRoller.detect_item(frame_grabber.frame)
                 cv2.imshow("frame1", frames[0])
                 cv2.imshow("frame2", frames[1])
                 if cv2.waitKey(1) & 0xFF == ord('q'):

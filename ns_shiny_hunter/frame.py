@@ -167,17 +167,13 @@ class CompositeReferenceFrame(ReferenceFrame):
                 return all(ref.matches(frame) for ref in self.frames)
             case CompositeReferenceFrame.Behavior.OR:
                 return any(ref.matches(frame) for ref in self.frames)
-            case _:
-                return False
 
     def get_percent_match(self, frame: Frame) -> float:
         match self.behavior:
             case CompositeReferenceFrame.Behavior.AND:
-                return sum(ref.get_percent_match(ref) for ref in self.frames) / len(self.frames)
+                return sum(ref.get_percent_match(frame) for ref in self.frames) / len(self.frames)
             case CompositeReferenceFrame.Behavior.OR:
                 return min(ref.get_percent_match(frame) for ref in self.frames)
-            case _:
-                return 100.0
 
 
 class ReferenceFrameEnum(ReferenceFrame, Enum):
