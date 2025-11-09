@@ -1,16 +1,10 @@
-import time
-from datetime import datetime, timedelta
-
 import click
 
 from ns_controller.client import NsControllerClient
 from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
 from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
 from ns_shiny_hunter.frame_grabber import FrameGrabber
-from ns_shiny_hunter.legends_za.scripts.bench_reset.script import BenchReset
-from ns_shiny_hunter.legends_za.scripts.fly_reset.script import FlyReset
 from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.script import SushiHighRoller, State
-from ns_shiny_hunter.legends_za.scripts.wz20_alphas.script import WildZone20Alphas
 
 
 @click.command()
@@ -23,28 +17,25 @@ def main(host: str, port: int, resets: int) -> None:
         with FrameGrabber(0) as frame_grabber:
             pair_controller(client)
             script = SushiHighRoller(frame_grabber, client, state=State.OVERWORLD_POKEMON_CENTER)
-            # script = BenchReset(frame_grabber, client, resets=resets)
-            # script = FlyReset(FlyReset.WILD_ZONE_10, frame_grabber, client, resets=resets)
-            # script = WildZone20Alphas(frame_grabber, client, resets=resets)
             script.run()
     finally:
         open_controller_menu(client)
 
 
 def pair_controller(client: NsControllerClient):
-    client.click([Button.L, Button.R], down=0.5, post_delay=0.1)
-    client.click([Button.HOME], down=0.1, post_delay=3)
-    client.click([Button.A], down=0.1, post_delay=3)
+    client.click(Button.L, Button.R, post_delay=0.5)
+    client.click(Button.HOME, post_delay=3)
+    client.click(Button.A, post_delay=3)
 
 
 def open_controller_menu(client: NsControllerClient):
-    client.set_state(ControllerState(), post_delay=0.1)
-    client.click([Button.HOME], down=0.1, post_delay=1)
-    client.click([Button.DPAD_DOWN], down=0.1, post_delay=0.5)
+    client.clear()
+    client.click(Button.HOME, post_delay=1)
+    client.click(Button.DPAD_DOWN, post_delay=0.5)
     for _ in range(6):
-        client.click(buttons=[Button.DPAD_RIGHT], down=0.1, post_delay=0.05)
-    client.click([Button.A], down=0.1, post_delay=1)
-    client.click([Button.A], down=0.1)
+        client.click(Button.DPAD_RIGHT, post_delay=0.05)
+    client.click(Button.A, post_delay=1)
+    client.click(Button.A)
 
 
 # def wz_2(client: NsControllerClient, resets: int = 0):
@@ -149,44 +140,44 @@ def open_controller_menu(client: NsControllerClient):
 #         print("\nStopped runaround.")
 #         raise
 
+#
+# def wz_20_alphas(client: NsControllerClient, resets: int = 0):
+#     try:
+#         while True:
+#             resets += 1
+#             # run forward and stop
+#             client.set_stick(ls_y=1, post_delay=0.5)
+#             client.click([Button.B], down=0.5, post_delay=0.1)
+#             time.sleep(1.8)
+#             client.clear(0.1)
+#             # run backward and stop
+#             client.set_stick(ls_y=-1, post_delay=0.5)
+#             client.click([Button.B], down=0.5, post_delay=0.1)
+#             time.sleep(2.2)
+#             # spam A
+#             start = time.time()
+#             while time.time() - start < 5.0:
+#                 client.click([Button.A], down=0.1, post_delay=0.05)
+#             client.clear(0.1)
+#             time.sleep(12.5)
+#     except KeyboardInterrupt:
+#         print(f"\nCompleted {resets} resets.")
 
-def wz_20_alphas(client: NsControllerClient, resets: int = 0):
-    try:
-        while True:
-            resets += 1
-            # run forward and stop
-            client.set_stick(ls_y=1, post_delay=0.5)
-            client.click([Button.B], down=0.5, post_delay=0.1)
-            time.sleep(1.8)
-            client.clear(0.1)
-            # run backward and stop
-            client.set_stick(ls_y=-1, post_delay=0.5)
-            client.click([Button.B], down=0.5, post_delay=0.1)
-            time.sleep(2.2)
-            # spam A
-            start = time.time()
-            while time.time() - start < 5.0:
-                client.click([Button.A], down=0.1, post_delay=0.05)
-            client.clear(0.1)
-            time.sleep(12.5)
-    except KeyboardInterrupt:
-        print(f"\nCompleted {resets} resets.")
 
-
-def bench_reset(client: NsControllerClient, total_time: timedelta | None = None):
-    start = datetime.now()
-    try:
-        # hold down left stick
-        client.set_stick(ls_y=-1, post_delay=0.1)
-        while not total_time or datetime.now() - start < total_time:
-            client.click([Button.A], down=0.1, post_delay=0.1)
-        if total_time and datetime.now() - start >= total_time:
-            client.click([Button.HOME], down=1.5, post_delay=0.1)
-            client.click([Button.A], down=0.1, post_delay=0.1)
-            exit(0)
-    except KeyboardInterrupt:
-        elapsed = datetime.now() - start
-        print(f"\nElapsed time: {elapsed}.")
+# def bench_reset(client: NsControllerClient, total_time: timedelta | None = None):
+#     start = datetime.now()
+#     try:
+#         # hold down left stick
+#         client.set_stick(ls_y=-1, post_delay=0.1)
+#         while not total_time or datetime.now() - start < total_time:
+#             client.click([Button.A], down=0.1, post_delay=0.1)
+#         if total_time and datetime.now() - start >= total_time:
+#             client.click([Button.HOME], down=1.5, post_delay=0.1)
+#             client.click([Button.A], down=0.1, post_delay=0.1)
+#             exit(0)
+#     except KeyboardInterrupt:
+#         elapsed = datetime.now() - start
+#         print(f"\nElapsed time: {elapsed}.")
 
 
 if __name__ == "__main__":

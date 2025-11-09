@@ -1,7 +1,6 @@
 from typing import Final
 
-from ns_shiny_hunter.frame import ReferenceFrameEnum, SimpleFrameProcessor, SimpleReferenceFrame, BlurParams, \
-    LoggingReferenceFrame
+from ns_shiny_hunter.frame import ReferenceFrameEnum, SimpleFrameProcessor, SimpleReferenceFrame, BlurParams
 
 ATTACK_FRAME_PROCESSOR: Final = SimpleFrameProcessor.from_points(
     p1=(1086, 579),
@@ -28,27 +27,20 @@ ITEM_NAME_FRAME_PROCESSOR: Final = SimpleFrameProcessor.from_points(
     p1=(134, 253),
     p2=(467, 278),
     color_space=None,
-    # color_space=cv2.COLOR_BGR2GRAY,
     blur_params=BlurParams(ksize=(3, 3), sigma_x=0.5),
-    # threshold_params=ThresholdParams(adaptive_method=cv2.THRESH_BINARY + cv2.THRESH_OTSU),
-    # threshold_params=ThresholdParams(block_size=11, c=2)
     threshold_params=None
 )
 ITEM_QUANTITY_FRAME_PROCESSOR: Final = SimpleFrameProcessor.from_points(
     p1=(624, 235),
     p2=(681, 297),
     color_space=None,
-    # color_space=cv2.COLOR_BGR2GRAY,
     blur_params=BlurParams(ksize=(3, 3), sigma_x=0.5),
-    # threshold_params=ThresholdParams(adaptive_method=cv2.THRESH_BINARY + cv2.THRESH_OTSU),
-    # threshold_params=ThresholdParams(block_size=11, c=2)
     threshold_params=None
 )
 QUANTITY_TO_SELL_FRAME_PROCESSOR: Final = SimpleFrameProcessor.from_points(
     p1=(511, 253),
     p2=(556, 279),
     color_space=None,
-    # color_space=cv2.COLOR_BGR2GRAY,
     blur_params=BlurParams(ksize=(3, 3), sigma_x=0.5),
     threshold_params=None
 )
@@ -56,7 +48,6 @@ ACCEPT_OFFER_FRAME_PROCESSOR: Final = SimpleFrameProcessor.from_points(
     p1=(949, 437),
     p2=(1141, 530),
     color_space=None,
-    # color_space=cv2.COLOR_BGR2GRAY,
     blur_params=BlurParams(ksize=(3, 3), sigma_x=0.5),
     threshold_params=None
 )
@@ -114,11 +105,12 @@ class SushiHighRollerReferenceFrames(ReferenceFrameEnum):
         __file__, "sell-treasures.jpg",
         SimpleFrameProcessor.from_points((474, 30), (764, 76))
     )
-    SELL_TREASURES = LoggingReferenceFrame(
-        name="SELL_TREASURES",
-        delegate=SimpleReferenceFrame.create_from_file(
-            __file__, "sell-treasures.jpg",
-            SimpleFrameProcessor.from_points((409, 149), (492, 212)),
-            threshold=5
-        )
+    SELL_TREASURES = SimpleReferenceFrame.create_from_file(
+        __file__, "sell-treasures.jpg",
+        SimpleFrameProcessor.from_points((409, 149), (492, 212)),
+        threshold=5
+    )
+    THIS_POCKET_IS_EMPTY = SimpleReferenceFrame.create_from_file(
+        __file__, "this-pocket-is-empty.jpg",
+        SimpleFrameProcessor.from_points((277, 400), (468, 424))
     )

@@ -12,7 +12,7 @@ class NsControllerClient:
         self.channel = grpc.insecure_channel(f"{host}:{port}")
         self.stub = NsControllerStub(self.channel)
 
-    def _update_buttons(self, buttons: list[Button], pressed: bool) -> None:
+    def _update_buttons(self, *buttons: Button, pressed: bool) -> None:
         """
         Helper to set or clear button bits in the mask.
         Args:
@@ -30,7 +30,7 @@ class NsControllerClient:
         ack = self.stub.SetState(self.current_state)
         print(f'is_success={ack.success}')
 
-    def press(self, buttons: list[Button], send: bool = True, post_delay: float | None = 0.1) -> None:
+    def press(self, *buttons: Button, send: bool = True, post_delay: float | None = 0.1) -> None:
         """
         Press buttons (adds to currently pressed buttons).
         Args:
@@ -38,13 +38,13 @@ class NsControllerClient:
             send: If True, immediately send the state to the server
             post_delay: Optional delay in seconds after pressing the buttons
         """
-        self._update_buttons(buttons, True)
+        self._update_buttons(*buttons, pressed=True)
         if send:
             self.send()
         if post_delay:
             time.sleep(post_delay)
 
-    def release(self, buttons: list[Button], send: bool = True, post_delay: float | None = 0.1) -> None:
+    def release(self, *buttons: Button, send: bool = True, post_delay: float | None = 0.1) -> None:
         """
         Release buttons (removes from currently pressed buttons).
         Args:
@@ -52,13 +52,13 @@ class NsControllerClient:
             send: If True, immediately send the state to the server
             post_delay: Optional delay in seconds after releasing the buttons
         """
-        self._update_buttons(buttons, False)
+        self._update_buttons(*buttons, pressed=False)
         if send:
             self.send()
         if post_delay:
             time.sleep(post_delay)
 
-    def click(self, buttons: list[Button], down: float = 0.1, post_delay: float | None = 0.1) -> None:
+    def click(self, *buttons: Button, down: float = 0.1, post_delay: float | None = 0.1) -> None:
         """
         Simulate a button click (press and release after a delay).
         Args:
@@ -66,8 +66,8 @@ class NsControllerClient:
             down: Time in seconds to hold the buttons down
             post_delay: Optional delay in seconds after releasing the buttons
         """
-        self.press(buttons, send=True, post_delay=down)
-        self.release(buttons, send=True, post_delay=post_delay)
+        self.press(*buttons, send=True, post_delay=down)
+        self.release(*buttons, send=True, post_delay=post_delay)
 
     def set_stick(self,
                   ls_x: float = 0.0, ls_y: float = 0.0,

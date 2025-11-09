@@ -1,5 +1,4 @@
 import time
-import traceback
 from types import MappingProxyType
 from typing import Final
 
@@ -13,8 +12,7 @@ from ns_shiny_hunter.frame import Frame
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.frames import LegendsZAReferenceFrames
 from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.frames import SushiHighRollerReferenceFrames, \
-    ATTACK_FRAME_PROCESSOR, POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR, ITEM_NAME_FRAME_PROCESSOR, \
-    ITEM_QUANTITY_FRAME_PROCESSOR, QUANTITY_TO_SELL_FRAME_PROCESSOR, ACCEPT_OFFER_FRAME_PROCESSOR
+    ATTACK_FRAME_PROCESSOR, POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR
 from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.state import State
 
 
@@ -57,14 +55,14 @@ class SushiHighRoller:
         if self.state == State.ENTRANCE_1:
             self.controller.set_stick(ls_x=1, post_delay=0.25)
             self.controller.set_stick(ls_x=0, post_delay=0.1)
-        self.controller.click([Button.A])
+        self.controller.click(Button.A)
 
         if SushiHighRollerReferenceFrames.ENTRANCE_CONFIRMATION.matches(self.frame_grabber.frame):
             self.state = State.ENTRANCE_CONFIRMATION
 
     def state_handler_entrance_confirmation(self):
         print('State.ENTRANCE_CONFIRMATION')
-        self.controller.click([Button.A])
+        self.controller.click(Button.A)
 
         frame = self.frame_grabber.frame
         if SushiHighRollerReferenceFrames.CANNOT_AFFORD.matches(frame):
@@ -74,7 +72,7 @@ class SushiHighRoller:
 
     def state_handler_follow_me(self):
         print('State.FOLLOW_ME')
-        self.controller.click([Button.A])
+        self.controller.click(Button.A)
         if SushiHighRollerReferenceFrames.BATTLE.matches(self.frame_grabber.frame):
             self.state = State.BATTLE
 
@@ -86,32 +84,34 @@ class SushiHighRoller:
             text = text.strip().lower()
             print(f'> Detected attack: "{text}"')
             if text == "":
-                self.controller.release([Button.ZL])
-                self.controller.press([Button.ZL])
+                self.controller.release(Button.ZL)
+                self.controller.press(Button.ZL)
                 time.sleep(0.5)
-        self.controller.click([Button.A])
+        self.controller.click(Button.A)
 
         frame = self.frame_grabber.frame
         if SushiHighRollerReferenceFrames.OUTCOME_FAILURE.matches(frame):
             self.state = State.OUTCOME_FAILURE
+            self.controller.clear()
         elif SushiHighRollerReferenceFrames.OUTCOME_SUCCESS.matches(frame):
             self.state = State.OUTCOME_SUCCESS
+            self.controller.clear()
 
     def state_handler_outcome(self):
         print('State.OUTCOME_FAILURE | State.OUTCOME_SUCCESS')
-        self.controller.click([Button.A])
+        self.controller.click(Button.A)
         if SushiHighRollerReferenceFrames.ENTRANCE_2.matches(self.frame_grabber.frame):
             self.state = State.ENTRANCE_2
 
     def state_handler_cannot_afford(self):
         print('State.CANNOT_AFFORD')
         while True:
-            self.controller.click([Button.A])
+            self.controller.click(Button.A)
             if SushiHighRollerReferenceFrames.ENTRANCE_2.matches(self.frame_grabber.frame):
                 break
 
         # open map
-        self.controller.click([Button.PLUS])
+        self.controller.click(Button.PLUS)
         if LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
             self.state = State.OPEN_MAP
 
@@ -124,20 +124,20 @@ class SushiHighRoller:
 
     def state_handler_travel_here(self):
         print('State.TRAVEL_HERE')
-        self.controller.click([Button.A])
+        self.controller.click(Button.A)
         if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION.matches(self.frame_grabber.frame):
             self.state = State.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION
 
     def state_handler_travel_to_pokemon_center_confirmation(self):
         print('State.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION')
-        self.controller.click([Button.A])
+        self.controller.click(Button.A)
         if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
             self.state = State.OVERWORLD_POKEMON_CENTER
 
     def state_handler_overworld_pokemon_center(self):
         print('State.OVERWORLD_POKEMON_CENTER')
         self.controller.set_stick(ls_y=1, post_delay=0.1)
-        self.controller.click([Button.B])
+        self.controller.click(Button.B)
         while True:
             if SushiHighRollerReferenceFrames.POKEMON_CENTER_DIALOG_START.matches(self.frame_grabber.frame):
                 self.state = State.POKEMON_CENTER_DIALOG
@@ -147,42 +147,38 @@ class SushiHighRoller:
 
     def state_handler_pokemon_center_dialog(self):
         print('State.POKEMON_CENTER_DIALOG')
-        self.controller.click([Button.A], post_delay=1.5)
-        self.controller.click([Button.A], post_delay=0.5)
+        self.controller.click(Button.A, post_delay=1.5)
+        self.controller.click(Button.A, post_delay=0.5)
 
         def select_option(option_index: int):
             while True:
                 frame = POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR.prepare_frame(self.frame_grabber.frame)
                 if self.detect_highlighted_option(frame, 3) == option_index:
-                    self.controller.click([Button.A])
+                    self.controller.click(Button.A)
                     break
-                self.controller.click([Button.DPAD_DOWN], down=0.2)
+                self.controller.click(Button.DPAD_DOWN)
 
         select_option(1)  # select "I'd like to do some shopping"
         select_option(1)  # select "I'd like to sell"
 
         while not SushiHighRollerReferenceFrames.SELL_TREASURES.matches(self.frame_grabber.frame):
-            self.controller.click([Button.R], post_delay=0.5)
+            self.controller.click(Button.R, post_delay=0.5)
 
         self.sell_treasures()
         while True:
-            self.controller.click([Button.B])
+            self.controller.click(Button.B)
             if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
                 break
 
     def sell_treasures(self):
         while True:
-            time.sleep(0.5)
-            item_name, item_quantity = self.detect_item(self.frame_grabber.frame)
-            print(f'> Detected item: "{item_name}" x{item_quantity}')
-            if not item_name and not item_quantity:
+            if SushiHighRollerReferenceFrames.THIS_POCKET_IS_EMPTY.matches(self.frame_grabber.frame):
                 break
-            # select item, select max quantity, offer items
-            self.controller.click([Button.A], post_delay=1)
-            self.controller.click([Button.DPAD_DOWN], post_delay=1)
-            self.controller.click([Button.A], down=0.1, post_delay=1)
-            self.controller.click([Button.A], down=0.1, post_delay=1)
-            self.controller.click([Button.A], down=0.1, post_delay=1)
+            self.controller.click(Button.A, post_delay=0.5)  # select item
+            self.controller.click(Button.DPAD_DOWN, post_delay=0.5)  # select max quantity
+            self.controller.click(Button.A, post_delay=0.5)  # offer items
+            self.controller.click(Button.A, post_delay=0.5)  # accept offer
+            self.controller.click(Button.A, post_delay=0.5)  # ack receipt
 
     # Returns one of the three option strings
     @staticmethod
@@ -207,28 +203,3 @@ class SushiHighRoller:
             band = white_mask[ys:ye, :]
             white_scores.append(np.count_nonzero(band) / band.size)
         return int(np.argmax(white_scores))
-
-    @staticmethod
-    def detect_item(frame: Frame) -> (str, str):
-        try:
-            item_name = pytesseract.image_to_string(ITEM_NAME_FRAME_PROCESSOR.prepare_frame(frame), config='--psm 7')
-            item_quantity = pytesseract.image_to_string(ITEM_QUANTITY_FRAME_PROCESSOR.prepare_frame(frame),
-                                                        config='--psm 7 tessedit_char_whitelist=0123456789')
-            print(f'> Detected item name: "{item_name}" and quantity: "{item_quantity}"')
-            return item_name.strip(), item_quantity.strip()
-        except Exception:
-            traceback.print_exc()
-            return "", ""
-
-    @staticmethod
-    def detect_quantity_to_sell(frame: Frame) -> str:
-        frame = QUANTITY_TO_SELL_FRAME_PROCESSOR.prepare_frame(frame)
-        return pytesseract.image_to_string(frame, config='--psm 7 tessedit_char_whitelist=0123456789')
-
-    # # Small cleanups (optional, but helps on video)
-    # k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    # frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, k)
-    # frame = cv2.morphologyEx(frame, cv2.MORPH_CLOSE, k)
-
-    # return text, quantity
-    pass
