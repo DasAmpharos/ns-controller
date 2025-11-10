@@ -112,5 +112,6 @@ class SushiHighRollerReferenceFrames(ReferenceFrameEnum):
     )
     THIS_POCKET_IS_EMPTY = SimpleReferenceFrame.create_from_file(
         __file__, "this-pocket-is-empty.jpg",
-        SimpleFrameProcessor.from_points((277, 400), (468, 424))
+        SimpleFrameProcessor.from_points((277, 400), (468, 424)),
+        threshold=5
     )

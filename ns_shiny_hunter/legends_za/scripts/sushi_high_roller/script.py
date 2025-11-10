@@ -29,11 +29,9 @@ class SushiHighRoller:
             State.OUTCOME_SUCCESS: self.state_handler_outcome,
             State.OUTCOME_FAILURE: self.state_handler_outcome,
             State.CANNOT_AFFORD: self.state_handler_cannot_afford,
-            State.OPEN_MAP: self.state_handler_open_map,
-            State.TRAVEL_TO_POKEMON_CENTER: self.state_handler_travel_here,
-            State.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION: self.state_handler_travel_to_pokemon_center_confirmation,
-            State.OVERWORLD_POKEMON_CENTER: self.state_handler_overworld_pokemon_center,
+            State.FLY_TO_POKEMON_CENTER: self.state_handler_fly_to_pokemon_center,
             State.POKEMON_CENTER_DIALOG: self.state_handler_pokemon_center_dialog,
+            State.FLY_TO_SUSHI_HIGH_ROLLER: self.state_handler_fly_to_sushi_high_roller,
         })
         self.state = state
 
@@ -108,34 +106,25 @@ class SushiHighRoller:
         while True:
             self.controller.click(Button.A)
             if SushiHighRollerReferenceFrames.ENTRANCE_2.matches(self.frame_grabber.frame):
+                self.state = State.FLY_TO_POKEMON_CENTER
                 break
 
-        # open map
-        self.controller.click(Button.PLUS)
-        if LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
-            self.state = State.OPEN_MAP
-
-    def state_handler_open_map(self):
-        print('State.OPEN_MAP')
+    def state_handler_fly_to_pokemon_center(self):
+        print('State.FLY_TO_POKEMON_CENTER')
+        while not LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
+            self.controller.click(Button.PLUS, post_delay=0.5)
+        # move cursor to nearest Pokemon Center
         self.controller.set_stick(ls_x=0.05, ls_y=0.8, post_delay=0.3)
-        self.controller.clear(post_delay=1)
+        self.controller.clear()
+
         if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER.matches(self.frame_grabber.frame):
-            self.state = State.TRAVEL_TO_POKEMON_CENTER
-
-    def state_handler_travel_here(self):
-        print('State.TRAVEL_HERE')
-        self.controller.click(Button.A)
+            self.controller.click(Button.A, post_delay=0.5)
         if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION.matches(self.frame_grabber.frame):
-            self.state = State.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION
+            self.controller.click(Button.A, post_delay=0.5)
 
-    def state_handler_travel_to_pokemon_center_confirmation(self):
-        print('State.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION')
-        self.controller.click(Button.A)
-        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
-            self.state = State.OVERWORLD_POKEMON_CENTER
+        while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
+            time.sleep(0.1)
 
-    def state_handler_overworld_pokemon_center(self):
-        print('State.OVERWORLD_POKEMON_CENTER')
         self.controller.set_stick(ls_y=1, post_delay=0.1)
         self.controller.click(Button.B)
         while True:
@@ -146,10 +135,6 @@ class SushiHighRoller:
             time.sleep(0.1)
 
     def state_handler_pokemon_center_dialog(self):
-        print('State.POKEMON_CENTER_DIALOG')
-        self.controller.click(Button.A, post_delay=1.5)
-        self.controller.click(Button.A, post_delay=0.5)
-
         def select_option(option_index: int):
             while True:
                 frame = POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR.prepare_frame(self.frame_grabber.frame)
@@ -158,27 +143,57 @@ class SushiHighRoller:
                     break
                 self.controller.click(Button.DPAD_DOWN)
 
+        def sell_treasures():
+            while True:
+                if SushiHighRollerReferenceFrames.THIS_POCKET_IS_EMPTY.matches(self.frame_grabber.frame):
+                    break
+                self.controller.click(Button.A, post_delay=0.5)  # select item
+                self.controller.click(Button.DPAD_DOWN, post_delay=0.5)  # select max quantity
+                self.controller.click(Button.A, post_delay=0.5)  # offer items
+                self.controller.click(Button.A, post_delay=0.5)  # accept offer
+                self.controller.click(Button.A, post_delay=0.5)  # ack receipt
+
+        print('State.POKEMON_CENTER_DIALOG')
+        self.controller.click(Button.A, post_delay=1.5)
+        self.controller.click(Button.A, post_delay=0.5)
+
         select_option(1)  # select "I'd like to do some shopping"
         select_option(1)  # select "I'd like to sell"
 
         while not SushiHighRollerReferenceFrames.SELL_TREASURES.matches(self.frame_grabber.frame):
-            self.controller.click(Button.R, post_delay=0.5)
+            self.controller.click(Button.R)
 
-        self.sell_treasures()
+        sell_treasures()
         while True:
             self.controller.click(Button.B)
             if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
+                self.state = State.FLY_TO_SUSHI_HIGH_ROLLER
                 break
 
-    def sell_treasures(self):
+    def state_handler_fly_to_sushi_high_roller(self):
+        print('State.FLY_TO_SUSHI_HIGH_ROLLER')
+        while not LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
+            self.controller.click(Button.PLUS, post_delay=0.5)
+        # move cursor to Sushi High Roller
+        self.controller.set_stick(ls_x=-0.05, ls_y=-0.8, post_delay=0.3)
+        self.controller.clear()
+
+        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER.matches(self.frame_grabber.frame):
+            self.controller.click(Button.A, post_delay=0.5)
+        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION.matches(self.frame_grabber.frame):
+            self.controller.click(Button.A, post_delay=0.5)
+
+        while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
+            time.sleep(0.1)
+
+        self.controller.set_stick(ls_y=1, post_delay=0.1)
+        self.controller.click(Button.B)
         while True:
-            if SushiHighRollerReferenceFrames.THIS_POCKET_IS_EMPTY.matches(self.frame_grabber.frame):
+            if SushiHighRollerReferenceFrames.POKEMON_CENTER_DIALOG_START.matches(self.frame_grabber.frame):
+                self.state = State.POKEMON_CENTER_DIALOG
+                self.controller.clear()
                 break
-            self.controller.click(Button.A, post_delay=0.5)  # select item
-            self.controller.click(Button.DPAD_DOWN, post_delay=0.5)  # select max quantity
-            self.controller.click(Button.A, post_delay=0.5)  # offer items
-            self.controller.click(Button.A, post_delay=0.5)  # accept offer
-            self.controller.click(Button.A, post_delay=0.5)  # ack receipt
+            time.sleep(0.1)
 
     # Returns one of the three option strings
     @staticmethod

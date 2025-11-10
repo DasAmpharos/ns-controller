@@ -10,11 +10,12 @@ from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.script import SushiHig
 @click.command()
 @click.option("--host", default=DEFAULT_HOST, help="Server host")
 @click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
+@click.option("--source", type=int, default=0, help="Video source index")
 @click.option("--resets", default=1, type=int)
-def main(host: str, port: int, resets: int) -> None:
+def main(host: str, port: int, source: int, resets: int) -> None:
     client = NsControllerClient(host, port)
     try:
-        with FrameGrabber(0) as frame_grabber:
+        with FrameGrabber(source) as frame_grabber:
             pair_controller(client)
             script = SushiHighRoller(frame_grabber, client, state=State.OVERWORLD_POKEMON_CENTER)
             script.run()
