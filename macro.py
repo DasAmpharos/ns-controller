@@ -1,10 +1,11 @@
 import click
 
 from ns_controller.client import NsControllerClient
-from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
+from ns_controller.pb.ns_controller_pb2 import Button
 from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
 from ns_shiny_hunter.frame_grabber import FrameGrabber
-from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.script import SushiHighRoller, State
+from ns_shiny_hunter.legends_za.scripts.bench_reset.script import BenchReset
+from ns_shiny_hunter.legends_za.scripts.wz5.script import WildZone5
 
 
 @click.command()
@@ -17,7 +18,9 @@ def main(host: str, port: int, source: int, resets: int) -> None:
     try:
         with FrameGrabber(source) as frame_grabber:
             pair_controller(client)
-            script = SushiHighRoller(frame_grabber, client, state=State.OVERWORLD_POKEMON_CENTER)
+            script = BenchReset(frame_grabber, client, resets=resets)
+            # script = SushiHighRoller(frame_grabber, client, state=State.ENTRANCE_1)
+            # script = WildZone5(frame_grabber, client, resets=resets)
             script.run()
     finally:
         open_controller_menu(client)

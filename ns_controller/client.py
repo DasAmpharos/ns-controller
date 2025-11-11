@@ -25,10 +25,10 @@ class NsControllerClient:
             else:
                 self.current_state.buttons &= ~(1 << button)
 
-    def send(self):
-        debug(self.current_state)
-        ack = self.stub.SetState(self.current_state)
-        print(f'is_success={ack.success}')
+    def send(self, debug: bool = False):
+        if debug:
+            print_state(self.current_state)
+        self.stub.SetState(self.current_state)
 
     def press(self, *buttons: Button, send: bool = True, post_delay: float | None = 0.1) -> None:
         """
@@ -161,7 +161,7 @@ class NsControllerClient:
         self.channel.close()
 
 
-def debug(state: ControllerState):
+def print_state(state: ControllerState):
     print({
         "buttons": {
             "mask": state.buttons,

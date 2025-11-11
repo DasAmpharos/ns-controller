@@ -1,6 +1,7 @@
 from typing import Final
 
-from ns_shiny_hunter.frame import ReferenceFrameEnum, SimpleFrameProcessor, SimpleReferenceFrame, BlurParams
+from ns_shiny_hunter.frame import ReferenceFrameEnum, SimpleFrameProcessor, SimpleReferenceFrame, BlurParams, \
+    LoggingReferenceFrame
 
 ATTACK_FRAME_PROCESSOR: Final = SimpleFrameProcessor.from_points(
     p1=(1086, 579),
@@ -54,6 +55,11 @@ ACCEPT_OFFER_FRAME_PROCESSOR: Final = SimpleFrameProcessor.from_points(
 
 
 class SushiHighRollerReferenceFrames(ReferenceFrameEnum):
+    ENTRANCE_1 = SimpleReferenceFrame.create_from_file(
+        __file__, "entrance-1.jpg",
+        SimpleFrameProcessor.from_points((51, 214), (195, 236)),
+        threshold=10
+    )
     ENTRANCE_2 = SimpleReferenceFrame.create_from_file(
         __file__, "entrance-2.jpg",
         SimpleFrameProcessor.from_points((558, 162), (713, 208)),
@@ -89,17 +95,16 @@ class SushiHighRollerReferenceFrames(ReferenceFrameEnum):
         SimpleFrameProcessor.from_points((363, 592), (881, 666)),
         threshold=10
     )
-    TRAVEL_TO_POKEMON_CENTER = SimpleReferenceFrame.create_from_file(
-        __file__, "travel-to-pokemon-center.jpg",
-        SimpleFrameProcessor.from_points((873, 128), (1070, 151))
-    )
+    TRAVEL_TO_POKEMON_CENTER = LoggingReferenceFrame(
+        name="TRAVEL_TO_POKEMON_CENTER",
+        delegate=SimpleReferenceFrame.create_from_file(
+            __file__, "travel-to-pokemon-center.jpg",
+            SimpleFrameProcessor.from_points((873, 128), (1070, 151)),
+            threshold=5
+        ))
     TRAVEL_TO_POKEMON_CENTER_CONFIRMATION = SimpleReferenceFrame.create_from_file(
         __file__, "travel-to-pokemon-center-confirmation.jpg",
         SimpleFrameProcessor.from_points((363, 593), (663, 622))
-    )
-    POKEMON_CENTER_DIALOG_START = SimpleReferenceFrame.create_from_file(
-        __file__, "pokemon-center-dialog-start.jpg",
-        SimpleFrameProcessor.from_points((692, 423), (709, 438))
     )
     SELLING_MENU = SimpleReferenceFrame.create_from_file(
         __file__, "sell-treasures.jpg",

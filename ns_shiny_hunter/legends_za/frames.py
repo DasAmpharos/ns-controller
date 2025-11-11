@@ -23,7 +23,8 @@ class OverworldReferenceFrames(ReferenceFrameEnum):
 class LegendsZAReferenceFrames(ReferenceFrameEnum):
     OPEN_MAP = SimpleReferenceFrame.create_from_file(
         __file__, "open-map.jpg",
-        SimpleFrameProcessor(x=57, y=25, w=123, h=21)
+        SimpleFrameProcessor(x=57, y=25, w=123, h=21),
+        threshold=5
     )
     TRAVEL_HERE = SimpleReferenceFrame.create_from_file(
         __file__, "travel-here.jpg",
@@ -33,4 +34,12 @@ class LegendsZAReferenceFrames(ReferenceFrameEnum):
         __file__, "overworld-day.jpg",
         PolygonFrameProcessor(points=np.array([[121, 109], [131, 132], [121, 129], [110, 132]], dtype=np.int32)),
         threshold=65
+    )
+    PRESS_A_TO_ENTER = SimpleReferenceFrame.create_from_file(
+        __file__, "press-a-to-enter.jpg",
+        SimpleFrameProcessor.from_points((692, 414), (709, 431))
+    )
+    PRESS_A_TO_TALK = SimpleReferenceFrame.create_from_file(
+        __file__, "press-a-to-talk.jpg",
+        SimpleFrameProcessor.from_points((692, 423), (709, 438))
     )

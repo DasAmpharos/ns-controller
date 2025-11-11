@@ -117,18 +117,13 @@ class SushiHighRoller:
         self.controller.set_stick(ls_x=0.05, ls_y=0.8, post_delay=0.3)
         self.controller.clear()
 
-        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER.matches(self.frame_grabber.frame):
-            self.controller.click(Button.A, post_delay=0.5)
-        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION.matches(self.frame_grabber.frame):
-            self.controller.click(Button.A, post_delay=0.5)
-
         while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
-            time.sleep(0.1)
+            self.controller.click(Button.A)
 
         self.controller.set_stick(ls_y=1, post_delay=0.1)
         self.controller.click(Button.B)
         while True:
-            if SushiHighRollerReferenceFrames.POKEMON_CENTER_DIALOG_START.matches(self.frame_grabber.frame):
+            if LegendsZAReferenceFrames.PRESS_A_TO_TALK.matches(self.frame_grabber.frame):
                 self.state = State.POKEMON_CENTER_DIALOG
                 self.controller.clear()
                 break
@@ -176,24 +171,21 @@ class SushiHighRoller:
             self.controller.click(Button.PLUS, post_delay=0.5)
         # move cursor to Sushi High Roller
         self.controller.set_stick(ls_x=-0.05, ls_y=-0.8, post_delay=0.3)
-        self.controller.clear()
-
-        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER.matches(self.frame_grabber.frame):
-            self.controller.click(Button.A, post_delay=0.5)
-        if SushiHighRollerReferenceFrames.TRAVEL_TO_POKEMON_CENTER_CONFIRMATION.matches(self.frame_grabber.frame):
-            self.controller.click(Button.A, post_delay=0.5)
+        self.controller.clear(post_delay=0.5)
 
         while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
-            time.sleep(0.1)
+            self.controller.click(Button.A, post_delay=0.5)
 
         self.controller.set_stick(ls_y=1, post_delay=0.1)
         self.controller.click(Button.B)
-        while True:
-            if SushiHighRollerReferenceFrames.POKEMON_CENTER_DIALOG_START.matches(self.frame_grabber.frame):
-                self.state = State.POKEMON_CENTER_DIALOG
-                self.controller.clear()
-                break
+
+        while not LegendsZAReferenceFrames.PRESS_A_TO_ENTER.matches(self.frame_grabber.frame):
             time.sleep(0.1)
+        self.controller.clear()
+
+        while not SushiHighRollerReferenceFrames.ENTRANCE_1.matches(self.frame_grabber.frame):
+            self.controller.click(Button.A)
+        self.state = State.ENTRANCE_1
 
     # Returns one of the three option strings
     @staticmethod
