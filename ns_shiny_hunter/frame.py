@@ -1,108 +1,148 @@
-import os.path
 import pathlib
-from dataclasses import dataclass
 from enum import IntEnum, auto, Enum
-from typing import Any, Final, Protocol
+from typing import Any, Final, Protocol, override
 
 import cv2
 import numpy as np
+from loguru import logger
 
 Frame = cv2.Mat | np.ndarray[Any, np.dtype] | np.ndarray
 
 
-@dataclass
-class BlurParams:
-    ksize: tuple[int, int] = (5, 5)
-    sigma_x: float = 0.0
-    sigma_y: float = 0.0
-
-
-@dataclass
-class ThresholdParams:
-    max_value: int = 255
-    adaptive_method: int = cv2.ADAPTIVE_THRESH_GAUSSIAN_C
-    threshold_type: int = cv2.THRESH_BINARY
-    block_size: int = 11
-    c: float = 2
-
-
-class RotationInvariantFrameProcessor:
-    """Frame processor for detecting icons regardless of rotation within an ROI"""
-
-    def __init__(self, x1: int, y1: int, x2: int, y2: int):
-        self.x1: Final = x1
-        self.y1: Final = y1
-        self.x2: Final = x2
-        self.y2: Final = y2
-
-    def prepare_frame(self, frame: Frame) -> Frame:
-        """Extract ROI from frame and convert to grayscale"""
-        roi = frame[self.y1:self.y2, self.x1:self.x2]
-        return cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-
-
 class FrameProcessor(Protocol):
-    def prepare_frame(self, frame: Frame) -> Frame:
+    def process_frame(self, frame: Frame) -> Frame:
         ...
 
 
-class SimpleFrameProcessor(FrameProcessor):
-    def __init__(self,
-                 x: int,
-                 y: int,
-                 w: int,
-                 h: int,
-                 color_space: int | None = cv2.COLOR_BGR2GRAY,
-                 blur_params: BlurParams | None = BlurParams(),
-                 threshold_params: ThresholdParams | None = ThresholdParams()):
-        self.x1: Final = x
-        self.x2: Final = x + w
-        self.y1: Final = y
-        self.y2: Final = y + h
-        self.color_space: Final = color_space
-        self.blur_params: Final = blur_params
-        self.threshold_params: Final = threshold_params
+class CompositeFrameProcessor(FrameProcessor):
+    def __init__(self, *processors: FrameProcessor):
+        self.m_processors: Final = processors
 
-    @classmethod
-    def from_points(cls, p1: tuple[int, int], p2: tuple[int, int], **kwargs) -> 'SimpleFrameProcessor':
-        return cls(p1[0], p1[1], p2[0] - p1[0], p2[1] - p1[1], **kwargs)
-
-    def prepare_frame(self, frame: Frame) -> Frame:
-        frame = frame[self.y1:self.y2, self.x1:self.x2]
-        if self.color_space is not None:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        if self.blur_params is not None:
-            frame = cv2.GaussianBlur(frame, self.blur_params.ksize, sigmaX=self.blur_params.sigma_x, sigmaY=self.blur_params.sigma_y)
-        if self.threshold_params is not None:
-            frame = cv2.adaptiveThreshold(frame,
-                                          self.threshold_params.max_value,
-                                          self.threshold_params.adaptive_method,
-                                          self.threshold_params.threshold_type,
-                                          self.threshold_params.block_size,
-                                          self.threshold_params.c)
+    @override
+    def process_frame(self, frame: Frame) -> Frame:
+        for processor in self.m_processors:
+            frame = processor.process_frame(frame)
         return frame
 
 
-class PolygonFrameProcessor(FrameProcessor):
-    def __init__(self,
-                 points: np.ndarray,
-                 ksize: tuple[int, int] = (5, 5),
-                 sigma_x: int = 0):
-        x, y, w, h = cv2.boundingRect(points)
-        self.x1: Final = x
-        self.x2: Final = x + w
-        self.y1: Final = y
-        self.y2: Final = y + h
-        self.points: Final = points
-        self.ksize: Final = ksize
-        self.sigma_x: Final = sigma_x
+class CropRect(FrameProcessor):
+    def __init__(self, x: int, y: int, w: int, h: int):
+        self.x: Final = x
+        self.y: Final = y
+        self.w: Final = w
+        self.h: Final = h
 
-    def prepare_frame(self, frame: Frame) -> Frame:
+    @override
+    def process_frame(self, frame: Frame) -> Frame:
+        return frame[self.y:self.y + self.h, self.x:self.x + self.w]
+
+
+class CropPoints(FrameProcessor):
+    def __init__(self, p1: tuple[int, int], p2: tuple[int, int]):
+        self.x1: Final = p1[0]
+        self.y1: Final = p1[1]
+        self.x2: Final = p2[0]
+        self.y2: Final = p2[1]
+
+    @override
+    def process_frame(self, frame: Frame) -> Frame:
+        return frame[self.y1:self.y2, self.x1:self.x2]
+
+
+class CropPolygon(FrameProcessor):
+    def __init__(self, points: np.ndarray):
+        self.points: Final = points
+        self.bounds: Final = cv2.boundingRect(points)
+
+    def process_frame(self, frame: Frame) -> Frame:
         mask = np.zeros(frame.shape[:2], dtype=np.uint8)
         cv2.fillPoly(mask, [self.points], 255)
         frame = cv2.bitwise_and(frame, frame, mask=mask)
-        frame = frame[self.y1:self.y2, self.x1:self.x2]
-        return cv2.GaussianBlur(frame, self.ksize, self.sigma_x)
+        x, y, w, h = self.bounds
+        return frame[y:y + h, x:x + w]
+
+
+class CvtColor(FrameProcessor):
+    def __init__(self, code: int):
+        self.m_code: Final = code
+
+    def process_frame(self, frame: Frame) -> Frame:
+        return cv2.cvtColor(frame, self.m_code)
+
+
+class GaussianBlur(FrameProcessor):
+    def __init__(self, ksize: tuple[int, int], sigma_x: float = 0.0, sigma_y: float = 0.0):
+        self.ksize: Final = ksize
+        self.sigma_x: Final = sigma_x
+        self.sigma_y: Final = sigma_y
+
+    def process_frame(self, frame: Frame) -> Frame:
+        return cv2.GaussianBlur(frame, self.ksize, sigmaX=self.sigma_x, sigmaY=self.sigma_y)
+
+
+class AdaptiveThreshold(FrameProcessor):
+    def __init__(self,
+                 max_value: int = 255,
+                 adaptive_method: int = cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                 threshold_type: int = cv2.THRESH_BINARY,
+                 block_size: int = 11,
+                 c: float = 2):
+        self.max_value: Final = max_value
+        self.adaptive_method: Final = adaptive_method
+        self.threshold_type: Final = threshold_type
+        self.block_size: Final = block_size
+        self.c: Final = c
+
+    def process_frame(self, frame: Frame) -> Frame:
+        return cv2.adaptiveThreshold(frame,
+                                     self.max_value,
+                                     self.adaptive_method,
+                                     self.threshold_type,
+                                     self.block_size,
+                                     self.c)
+
+
+class FrameProcessors:
+    CVT_COLOR_BGR2GRAY: Final = CvtColor(cv2.COLOR_BGR2GRAY)
+    GAUSSIAN_BLUR_DEFAULT: Final = GaussianBlur((3, 3), sigma_x=0.5, sigma_y=0.5)
+
+    @staticmethod
+    def all(*processors: FrameProcessor) -> FrameProcessor:
+        return CompositeFrameProcessor(*processors)
+
+    @staticmethod
+    def crop_rect(x: int,
+                  y: int,
+                  w: int,
+                  h: int) -> FrameProcessor:
+        return CropRect(x, y, w, h)
+
+    @staticmethod
+    def crop_points(p1: tuple[int, int],
+                    p2: tuple[int, int]) -> FrameProcessor:
+        return CropPoints(p1, p2)
+
+    @staticmethod
+    def crop_polygon(points: np.ndarray) -> FrameProcessor:
+        return CropPolygon(points)
+
+    @staticmethod
+    def cvt_color(code: int) -> FrameProcessor:
+        return CvtColor(code)
+
+    @staticmethod
+    def gaussian_blur(ksize: tuple[int, int],
+                      sigma_x: float = 0.0,
+                      sigma_y: float = 0.0) -> FrameProcessor:
+        return GaussianBlur(ksize, sigma_x, sigma_y)
+
+    @staticmethod
+    def adaptive_threshold(max_value: int = 255,
+                           adaptive_method: int = cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                           threshold_type: int = cv2.THRESH_BINARY,
+                           block_size: int = 11,
+                           c: float = 2) -> FrameProcessor:
+        return AdaptiveThreshold(max_value, adaptive_method, threshold_type, block_size, c)
 
 
 class ReferenceFrame:
@@ -113,67 +153,85 @@ class ReferenceFrame:
         ...
 
 
-class SimpleReferenceFrame(ReferenceFrame):
-    def __init__(self,
-                 frame: Frame,
-                 frame_processor: FrameProcessor,
-                 threshold: int = 1):
-        self.frame: Final = frame
-        self.frame_processor: Final = frame_processor
+class ReferenceFrameTemplate(ReferenceFrame):
+    def __init__(self, template: Frame, threshold: float, frame_processor: FrameProcessor):
+        self.template: Final = template
         self.threshold: Final = threshold
-
-    @classmethod
-    def create_from_file(cls,
-                         srcfile: str,
-                         filepath: str,
-                         frame_processor: FrameProcessor,
-                         threshold: int = 1) -> ReferenceFrame:
-        filepath = os.path.join(os.path.dirname(srcfile), 'frames', filepath)
-        return cls.create_from_frame(cv2.imread(filepath), frame_processor, threshold)
-
-    @classmethod
-    def create_from_path(cls, filepath: pathlib.Path, frame_processor: FrameProcessor, threshold: int = 1):
-        filepath = filepath.absolute()
-        return cls.create_from_frame(cv2.imread(str(filepath)), frame_processor, threshold)
-
-    @classmethod
-    def create_from_frame(cls, frame: Frame, frame_processor: FrameProcessor,
-                          threshold: int = 1) -> 'SimpleReferenceFrame':
-        return cls(frame_processor.prepare_frame(frame), frame_processor, threshold)
+        self.frame_processor: Final = frame_processor
 
     def matches(self, frame: Frame) -> bool:
-        percent_match = self.get_percent_match(frame)
-        return percent_match < self.threshold
+        return self.get_percent_match(frame) < self.threshold
 
     def get_percent_match(self, frame: Frame) -> float:
-        frame = self.frame_processor.prepare_frame(frame)
-        res = cv2.absdiff(self.frame, frame)
+        frame = self.frame_processor.process_frame(frame)
+        res = cv2.absdiff(self.template, frame)
+        cv2.imshow("diff", res)
+        cv2.waitKey(0)
         res = res.astype(np.uint8)
-        return (np.count_nonzero(res) * 100) / res.size
+        return np.count_nonzero(res) / res.size
 
 
 class CompositeReferenceFrame(ReferenceFrame):
-    class Behavior(IntEnum):
+    class Mode(IntEnum):
         AND = auto()
         OR = auto()
 
-    def __init__(self, behavior: Behavior, frames: tuple[ReferenceFrame, ...]):
-        self.behavior: Final = behavior
-        self.frames: Final = frames
+    def __init__(self, mode: Mode, *reference_frames: ReferenceFrame):
+        self.mode: Final = mode
+        self.reference_frames: Final = reference_frames
 
     def matches(self, frame: Frame) -> bool:
-        match self.behavior:
-            case CompositeReferenceFrame.Behavior.AND:
-                return all(ref.matches(frame) for ref in self.frames)
-            case CompositeReferenceFrame.Behavior.OR:
-                return any(ref.matches(frame) for ref in self.frames)
+        match self.mode:
+            case self.Mode.AND:
+                return all(reference_frame.matches(frame) for reference_frame in self.reference_frames)
+            case self.Mode.OR:
+                return any(reference_frame.matches(frame) for reference_frame in self.reference_frames)
 
     def get_percent_match(self, frame: Frame) -> float:
-        match self.behavior:
-            case CompositeReferenceFrame.Behavior.AND:
-                return sum(ref.get_percent_match(frame) for ref in self.frames) / len(self.frames)
-            case CompositeReferenceFrame.Behavior.OR:
-                return min(ref.get_percent_match(frame) for ref in self.frames)
+        match self.mode:
+            case self.Mode.AND:
+                return sum(reference_frame.get_percent_match(frame) for reference_frame in self.reference_frames) / len(
+                    self.reference_frames)
+            case self.Mode.OR:
+                return min(reference_frame.get_percent_match(frame) for reference_frame in self.reference_frames)
+
+
+class LoggingReferenceFrame(ReferenceFrame):
+    def __init__(self, name: str, delegate: ReferenceFrame):
+        self.name: Final = name
+        self.delegate: Final = delegate
+
+    def matches(self, frame: Frame) -> bool:
+        self.get_percent_match(frame)
+        matches = self.delegate.matches(frame)
+        logger.info(f"name={self.name}, matches={matches}")
+        return matches
+
+    def get_percent_match(self, frame: Frame) -> float:
+        percent_match = self.delegate.get_percent_match(frame)
+        logger.info(f"name={self.name}, percent_match={percent_match}")
+        return percent_match
+
+
+class ReferenceFrames:
+    @staticmethod
+    def template_from_path(filepath: pathlib.Path,
+                           threshold: float,
+                           frame_processor: FrameProcessor,
+                           flags: int = cv2.IMREAD_COLOR_BGR) -> ReferenceFrame:
+        return ReferenceFrameTemplate(cv2.imread(str(filepath.absolute()), flags), threshold, frame_processor)
+
+    @staticmethod
+    def template_from_frame(frame: Frame, threshold: float, frame_processor: FrameProcessor) -> ReferenceFrame:
+        return ReferenceFrameTemplate(frame, threshold, frame_processor)
+
+    @staticmethod
+    def composite(mode: CompositeReferenceFrame.Mode, *reference_frames: ReferenceFrame) -> ReferenceFrame:
+        return CompositeReferenceFrame(mode, *reference_frames)
+
+    @staticmethod
+    def logging(name: str, delegate: ReferenceFrame) -> ReferenceFrame:
+        return LoggingReferenceFrame(name, delegate)
 
 
 class ReferenceFrameEnum(ReferenceFrame, Enum):
@@ -182,21 +240,3 @@ class ReferenceFrameEnum(ReferenceFrame, Enum):
 
     def get_percent_match(self, frame: Frame) -> float:
         return self.value.get_percent_match(frame)
-
-
-class LoggingReferenceFrame(ReferenceFrame):
-    def __init__(self, name: str, delegate: ReferenceFrame) -> None:
-        super().__init__()
-        self.name = name
-        self.delegate = delegate
-
-    def matches(self, frame: Frame) -> bool:
-        self.get_percent_match(frame)
-        matches = self.delegate.matches(frame)
-        print(f"Matches for {self.name}: {matches}")
-        return matches
-
-    def get_percent_match(self, frame: Frame) -> float:
-        percent_match = self.delegate.get_percent_match(frame)
-        print(f"Percent match for {self.name}: {percent_match}")
-        return percent_match

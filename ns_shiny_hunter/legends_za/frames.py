@@ -1,45 +1,73 @@
+import pathlib
+from typing import Final
+
 import numpy as np
 
 from ns_shiny_hunter.frame import (
     ReferenceFrameEnum,
-    SimpleFrameProcessor,
-    PolygonFrameProcessor, SimpleReferenceFrame
+    FrameProcessors,
+    ReferenceFrames
 )
 
-
-class OverworldReferenceFrames(ReferenceFrameEnum):
-    DAY = SimpleReferenceFrame.create_from_file(
-        __file__, "overworld-day.jpg",
-        SimpleFrameProcessor(x=110, y=110, w=22, h=22),
-        threshold=25
-    )
-    NIGHT = SimpleReferenceFrame.create_from_file(
-        __file__, "overworld-night.jpg",
-        SimpleFrameProcessor(x=110, y=110, w=22, h=22),
-        threshold=25
-    )
+FILEPATH: Final = pathlib.Path(__file__)
+FRAMES_DIR: Final = FILEPATH.parent / "frames"
 
 
 class LegendsZAReferenceFrames(ReferenceFrameEnum):
-    OPEN_MAP = SimpleReferenceFrame.create_from_file(
-        __file__, "open-map.jpg",
-        SimpleFrameProcessor(x=57, y=25, w=123, h=21),
-        threshold=5
+    OPEN_MAP = ReferenceFrames.template_from_path(
+        threshold=0.05,
+        filepath=FRAMES_DIR / "open-map.jpg",
+        frame_processor=FrameProcessors.all(
+            FrameProcessors.crop_rect(57, 25, 123, 21),
+            FrameProcessors.CVT_COLOR_BGR2GRAY,
+            FrameProcessors.GAUSSIAN_BLUR_DEFAULT,
+        )
     )
-    TRAVEL_HERE = SimpleReferenceFrame.create_from_file(
-        __file__, "travel-here.jpg",
-        SimpleFrameProcessor(x=582, y=425, w=107, h=21)
+    TRAVEL_HERE = ReferenceFrames.template_from_path(
+        threshold=0.01,
+        filepath=FRAMES_DIR / "travel-here.jpg",
+        frame_processor=FrameProcessors.all(
+            FrameProcessors.crop_rect(582, 425, 107, 21),
+            FrameProcessors.CVT_COLOR_BGR2GRAY,
+            FrameProcessors.GAUSSIAN_BLUR_DEFAULT,
+        )
     )
-    OVERWORLD = SimpleReferenceFrame.create_from_file(
-        __file__, "overworld-day.jpg",
-        PolygonFrameProcessor(points=np.array([[121, 109], [131, 132], [121, 129], [110, 132]], dtype=np.int32)),
-        threshold=65
+    OVERWORLD = ReferenceFrames.template_from_path(
+        threshold=0.65,
+        # filepath=FRAMES_DIR / "overworld-day.jpg",
+        filepath=FRAMES_DIR.parent.parent.parent / "frames" / "overworld.png",
+        frame_processor=FrameProcessors.all(
+            FrameProcessors.crop_polygon(
+                np.array(
+                    dtype=np.int32,
+                    object=[
+                        [121, 109],
+                        [130, 131],
+                        [121, 128],
+                        [120, 128],
+                        [111, 131],
+                        [120, 109],
+                    ]
+                )
+            ),
+            FrameProcessors.GAUSSIAN_BLUR_DEFAULT
+        ),
     )
-    PRESS_A_TO_ENTER = SimpleReferenceFrame.create_from_file(
-        __file__, "press-a-to-enter.jpg",
-        SimpleFrameProcessor.from_points((692, 414), (709, 431))
+    PRESS_A_TO_ENTER = ReferenceFrames.template_from_path(
+        threshold=0.01,
+        filepath=FRAMES_DIR / "press-a-to-enter.jpg",
+        frame_processor=FrameProcessors.all(
+            FrameProcessors.crop_points((692, 414), (709, 431)),
+            FrameProcessors.CVT_COLOR_BGR2GRAY,
+            FrameProcessors.GAUSSIAN_BLUR_DEFAULT,
+        )
     )
-    PRESS_A_TO_TALK = SimpleReferenceFrame.create_from_file(
-        __file__, "press-a-to-talk.jpg",
-        SimpleFrameProcessor.from_points((692, 423), (709, 438))
+    PRESS_A_TO_TALK = ReferenceFrames.template_from_path(
+        threshold=0.01,
+        filepath=FRAMES_DIR / "press-a-to-talk.jpg",
+        frame_processor=FrameProcessors.all(
+            FrameProcessors.crop_points((692, 423), (709, 438)),
+            FrameProcessors.CVT_COLOR_BGR2GRAY,
+            FrameProcessors.GAUSSIAN_BLUR_DEFAULT,
+        )
     )
