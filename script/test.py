@@ -1,56 +1,37 @@
 import time
 
 import cv2
-import numpy as np
-import pytesseract
 
-from ns_controller.client import NsControllerClient
-from ns_controller.pb.ns_controller_pb2 import Button, ControllerState
+from ns_shiny_hunter.frame import LoggingReferenceFrame, FrameProcessors
 from ns_shiny_hunter.frame_grabber import FrameGrabber
-from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.frames import DIALOG_FRAME_PROCESSOR, \
-    POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR
-from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.script import SushiHighRoller
-from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.state import State
+from ns_shiny_hunter.legends_za.frames import LegendsZAReferenceFrames
+from ns_shiny_hunter.legends_za.scripts.litwick.frames import LitwickScriptReferenceFrames
 
 
 def main():
-    # client = NsControllerClient('10.117.1.143', 50051)
-    # pair_controller(client)
-    # try:
-    #     with FrameGrabber(0, imshow=False) as frame_grabber:
-    #         script = SushiHighRoller(frame_grabber, client, state=State.POKEMON_CENTER_DIALOG)
-    #         script.run()
-    # except KeyboardInterrupt:
-    #     print("Exiting...")
+    reference_frames = [LoggingReferenceFrame(name=it.name, delegate=it) for it in LitwickScriptReferenceFrames]
+    reference_frame = next(iter([it for it in reference_frames if it.name == "FRAME_1"]))
 
-    try:
-        client = NsControllerClient()
-    except KeyboardInterrupt:
-        cv2.destroyAllWindows()
-        pass
+    frame_processor = reference_frame.delegate.value.frame_processor
+    frame = frame_processor.process_frame(reference_frame.delegate.value.template)
+    cv2.imwrite("frame-1.jpg", frame)
 
-        # script = SushiHighRoller(frame_grabber, client)
-        # script.state_handler_a_to_talk_pokemon_center()
-    # open_controller_menu(client)
-    # client.set_stick(ls_y=1, post_delay=0.5)
-    # client.click([Button.B])
-    # time.sleep(3)
-    # open_controller_menu(client)
-    # client.clear()
+    # with FrameGrabber(0, imshow=False) as frame_grabber:
+    #     try:
+    #         while True:
+    #             time.sleep(0.1)
+    #             print("Grabbing frame...")
+    #             frame = frame_grabber.frame
+    #             if frame is not None:
+    #                 print("Comparing frame...")
+    #                 reference_frame.matches(frame)
+    #                 # for reference_frame in reference_frames:
+    #                 #     reference_frame.get_percent_match(frame)
+    #             else:
+    #                 print("No frame grabbed...")
+    #     except KeyboardInterrupt:
+    #         pass
 
-def pair_controller(client: NsControllerClient):
-    client.click([Button.L, Button.R], down=0.5, post_delay=0.1)
-    client.click([Button.HOME], down=0.1, post_delay=3)
-    client.click([Button.A], down=0.1, post_delay=3)
-
-def open_controller_menu(client: NsControllerClient):
-    client.clear(post_delay=0.1)
-    client.click([Button.HOME], post_delay=1)
-    client.click([Button.DPAD_DOWN], post_delay=0.5)
-    for _ in range(6):
-        client.click(buttons=[Button.DPAD_RIGHT], post_delay=0.05)
-    client.click([Button.A], post_delay=1)
-    client.click([Button.A])
 
 if __name__ == '__main__':
     main()

@@ -5,22 +5,26 @@ from ns_controller.pb.ns_controller_pb2 import Button
 from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.scripts.bench_reset.script import BenchReset
-from ns_shiny_hunter.legends_za.scripts.wz5.script import WildZone5
+from ns_shiny_hunter.legends_za.scripts.fly_reset.script import FlyReset
+from ns_shiny_hunter.legends_za.scripts.litwick.script import LitwickScript
+from ns_shiny_hunter.legends_za.scripts.wz_fly_reset.script import WildZoneFlyReset
 
 
 @click.command()
 @click.option("--host", default=DEFAULT_HOST, help="Server host")
 @click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
 @click.option("--source", type=int, default=0, help="Video source index")
-@click.option("--resets", default=1, type=int)
+@click.option("--resets", default=0, type=int)
 def main(host: str, port: int, source: int, resets: int) -> None:
     client = NsControllerClient(host, port)
     try:
         with FrameGrabber(source) as frame_grabber:
             pair_controller(client)
+            # script = FlyReset(FlyReset.WILD_ZONE_4, frame_grabber, client, resets=resets)
             script = BenchReset(frame_grabber, client, resets=resets)
+            # script = LitwickScript(frame_grabber, client, resets=resets)
             # script = SushiHighRoller(frame_grabber, client, state=State.ENTRANCE_1)
-            # script = WildZone5(frame_grabber, client, resets=resets)
+            # script = WildZoneFlyReset(frame_grabber, client, resets=resets, mode=WildZoneFlyReset.Mode.ROLL_TO_ENTER)
             script.run()
     finally:
         open_controller_menu(client)

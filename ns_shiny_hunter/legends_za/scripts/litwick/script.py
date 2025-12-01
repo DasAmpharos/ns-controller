@@ -1,16 +1,11 @@
 import time
 
-import cv2
-
 from ns_controller.client import NsControllerClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame_grabber import FrameGrabber
-from .frames import BenchResetReferenceFrames
-from .state import State
-from ...frames import LegendsZAReferenceFrames
 
 
-class BenchReset:
+class LitwickScript:
     def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerClient, resets: int = 0):
         self.frame_grabber = frame_grabber
         self.controller = controller
@@ -19,12 +14,17 @@ class BenchReset:
     def run(self):
         try:
             while True:
+                delay = 5.5
                 self.resets += 1
                 print(f"Reset #{self.resets}...")
-                self.controller.set_stick(ls_y=-1, post_delay=0.2)
-                self.controller.clear()
-
-                while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.A)
+                self.controller.set_stick(ls_x=0.01, ls_y=1)
+                if self.resets == 1:
+                    self.controller.click(Button.B, down=0.5)
+                    delay -= 0.5
+                time.sleep(delay)
+                self.controller.set_stick(ls_x=0.01, ls_y=-1)
+                time.sleep(5.5)
+                # self.controller.click(Button.B, down=0.5, post_delay=6.0)
         except KeyboardInterrupt:
-            print(f"\nExiting BenchReset after {self.resets} resets...")
+            print(f"\nCompleted {self.resets} resets.")
+            raise

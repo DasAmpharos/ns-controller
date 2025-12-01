@@ -48,6 +48,22 @@ class CropPoints(FrameProcessor):
     def process_frame(self, frame: Frame) -> Frame:
         return frame[self.y1:self.y2, self.x1:self.x2]
 
+class CropCircle(FrameProcessor):
+    def __init__(self, center_x: int, center_y: int, radius: int):
+        self.center_x: Final = center_x
+        self.center_y: Final = center_y
+        self.radius: Final = radius
+
+    @override
+    def process_frame(self, frame: Frame) -> Frame:
+        # Create a mask with the same dimensions as the frame
+        mask = np.zeros(frame.shape[:2], np.uint8)
+        # Draw a filled white circle on the mask
+        cv2.circle(mask, (self.center_x, self.center_y), self.radius, 255, -1)
+        # Apply the mask to the frame
+        return cv2.bitwise_and(frame, frame, mask=mask)
+
+
 
 class CropPolygon(FrameProcessor):
     def __init__(self, points: np.ndarray):
@@ -105,6 +121,7 @@ class AdaptiveThreshold(FrameProcessor):
 class FrameProcessors:
     CVT_COLOR_BGR2GRAY: Final = CvtColor(cv2.COLOR_BGR2GRAY)
     GAUSSIAN_BLUR_DEFAULT: Final = GaussianBlur((3, 3), sigma_x=0.5, sigma_y=0.5)
+    ADAPTIVE_THRESHOLD_DEFAULT: Final = AdaptiveThreshold()
 
     @staticmethod
     def all(*processors: FrameProcessor) -> FrameProcessor:
@@ -121,6 +138,10 @@ class FrameProcessors:
     def crop_points(p1: tuple[int, int],
                     p2: tuple[int, int]) -> FrameProcessor:
         return CropPoints(p1, p2)
+
+    @staticmethod
+    def crop_circle(center_x: int, center_y: int, radius: int) -> FrameProcessor:
+        return CropCircle(center_x, center_y, radius)
 
     @staticmethod
     def crop_polygon(points: np.ndarray) -> FrameProcessor:
@@ -160,15 +181,33 @@ class ReferenceFrameTemplate(ReferenceFrame):
         self.frame_processor: Final = frame_processor
 
     def matches(self, frame: Frame) -> bool:
-        return self.get_percent_match(frame) < self.threshold
+        return self.get_percent_match(frame) > self.threshold
 
     def get_percent_match(self, frame: Frame) -> float:
         frame = self.frame_processor.process_frame(frame)
         res = cv2.absdiff(self.template, frame)
-        cv2.imshow("diff", res)
-        cv2.waitKey(0)
         res = res.astype(np.uint8)
-        return np.count_nonzero(res) / res.size
+        return 1 - np.count_nonzero(res) / res.size
+
+
+class ReferenceFrameTemplateMatch(ReferenceFrame):
+    def __init__(self, template: Frame, threshold: float, frame_processor: FrameProcessor,
+                 method: int = cv2.TM_CCOEFF_NORMED):
+        self.template: Final = template
+        self.threshold: Final = threshold
+        self.frame_processor: Final = frame_processor
+        self.method: Final = method
+
+    def matches(self, frame: Frame) -> bool:
+        return self.get_percent_match(frame) >= self.threshold
+
+    def get_percent_match(self, frame: Frame) -> float:
+        frame = self.frame_processor.process_frame(frame)
+        result = cv2.matchTemplate(frame, self.template, self.method)
+        min_val, max_val, _, _ = cv2.minMaxLoc(result)
+        if self.method == cv2.TM_SQDIFF or self.method == cv2.TM_SQDIFF_NORMED:
+            return 1.0 - min_val  # Invert for consistency
+        return max_val
 
 
 class CompositeReferenceFrame(ReferenceFrame):
@@ -215,15 +254,24 @@ class LoggingReferenceFrame(ReferenceFrame):
 
 class ReferenceFrames:
     @staticmethod
-    def template_from_path(filepath: pathlib.Path,
-                           threshold: float,
-                           frame_processor: FrameProcessor,
+    def template_from_path(filepath: pathlib.Path, threshold: float, frame_processor: FrameProcessor,
                            flags: int = cv2.IMREAD_COLOR_BGR) -> ReferenceFrame:
         return ReferenceFrameTemplate(cv2.imread(str(filepath.absolute()), flags), threshold, frame_processor)
 
     @staticmethod
     def template_from_frame(frame: Frame, threshold: float, frame_processor: FrameProcessor) -> ReferenceFrame:
         return ReferenceFrameTemplate(frame, threshold, frame_processor)
+
+    @staticmethod
+    def template_match_from_path(filepath: pathlib.Path, threshold: float, frame_processor: FrameProcessor,
+                                 flags: int = cv2.IMREAD_COLOR_BGR,
+                                 method: int = cv2.TM_CCOEFF_NORMED) -> ReferenceFrame:
+        return ReferenceFrameTemplateMatch(cv2.imread(str(filepath.absolute()), flags), threshold, frame_processor,
+                                           method)
+
+    @staticmethod
+    def template_match_from_frame(frame: Frame, threshold: float, frame_processor: FrameProcessor, method: int = cv2.TM_CCOEFF_NORMED) -> ReferenceFrame:
+        return ReferenceFrameTemplateMatch(frame, threshold, frame_processor, method)
 
     @staticmethod
     def composite(mode: CompositeReferenceFrame.Mode, *reference_frames: ReferenceFrame) -> ReferenceFrame:

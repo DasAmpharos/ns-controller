@@ -1,3 +1,4 @@
+import time
 from typing import Final
 
 from ns_controller.client import NsControllerClient
@@ -8,6 +9,7 @@ from .state import State
 
 
 class FlyReset:
+    WILD_ZONE_4: Final = (1.0, 0.0, 0.1)
     WILD_ZONE_10: Final = (0.9, 0.438, 0.1)
     WILD_ZONE_17: Final = (0.514, 0.857, 0.1)
     SHUTTERBUG_CAFE: Final = (0.25, -0.25, 0.05)
@@ -30,23 +32,24 @@ class FlyReset:
             while True:
                 match self.state:
                     case State.OVERWORLD:
+                        self.resets += 1
                         print('State.OVERWORLD')
                         print(f'Reset #{self.resets}...')
-                        self.controller.click([Button.PLUS], down=0.1, post_delay=1)
-                        if LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
-                            self.state = State.OPEN_MAP
+                        self.controller.click(Button.PLUS, post_delay=1)
+                        while not LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
+                            time.sleep(0.1)
+                        self.state = State.OPEN_MAP
                     case State.OPEN_MAP:
                         print('State.OPEN_MAP')
                         self.controller.set_stick(ls_x=self.action[0], ls_y=self.action[1], post_delay=self.action[2])
-                        self.controller.set_stick(ls_x=0, ls_y=0, post_delay=1)
-
-                        if LegendsZAReferenceFrames.TRAVEL_HERE.matches(self.frame_grabber.frame):
-                            self.state = State.TRAVEL_HERE
+                        self.controller.clear(post_delay=1)
+                        while not LegendsZAReferenceFrames.TRAVEL_HERE.matches(self.frame_grabber.frame):
+                            time.sleep(0.1)
+                        self.state = State.TRAVEL_HERE
                     case State.TRAVEL_HERE:
                         print('State.TRAVEL_HERE')
-                        self.controller.click([Button.A], down=0.1, post_delay=0.1)
-                        if LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
-                            self.state = State.OVERWORLD
-                            self.resets += 1
+                        while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
+                            self.controller.click(Button.A)
+                        self.state = State.OVERWORLD
         except KeyboardInterrupt:
             print(f"\nExiting FlyReset after {self.resets} resets...")
