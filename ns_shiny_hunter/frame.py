@@ -48,6 +48,7 @@ class CropPoints(FrameProcessor):
     def process_frame(self, frame: Frame) -> Frame:
         return frame[self.y1:self.y2, self.x1:self.x2]
 
+
 class CropCircle(FrameProcessor):
     def __init__(self, center_x: int, center_y: int, radius: int):
         self.center_x: Final = center_x
@@ -62,7 +63,6 @@ class CropCircle(FrameProcessor):
         cv2.circle(mask, (self.center_x, self.center_y), self.radius, 255, -1)
         # Apply the mask to the frame
         return cv2.bitwise_and(frame, frame, mask=mask)
-
 
 
 class CropPolygon(FrameProcessor):
@@ -96,6 +96,14 @@ class GaussianBlur(FrameProcessor):
         return cv2.GaussianBlur(frame, self.ksize, sigmaX=self.sigma_x, sigmaY=self.sigma_y)
 
 
+class MedianBlur(FrameProcessor):
+    def __init__(self, ksize: int = 5):
+        self.ksize: Final = ksize
+
+    def process_frame(self, frame: Frame) -> Frame:
+        return cv2.medianBlur(frame, self.ksize)
+
+
 class AdaptiveThreshold(FrameProcessor):
     def __init__(self,
                  max_value: int = 255,
@@ -122,6 +130,7 @@ class FrameProcessors:
     CVT_COLOR_BGR2GRAY: Final = CvtColor(cv2.COLOR_BGR2GRAY)
     GAUSSIAN_BLUR_DEFAULT: Final = GaussianBlur((3, 3), sigma_x=0.5, sigma_y=0.5)
     ADAPTIVE_THRESHOLD_DEFAULT: Final = AdaptiveThreshold()
+    MEDIAN_BLUR_DEFAULT: Final = MedianBlur(5)
 
     @staticmethod
     def all(*processors: FrameProcessor) -> FrameProcessor:
@@ -158,6 +167,10 @@ class FrameProcessors:
         return GaussianBlur(ksize, sigma_x, sigma_y)
 
     @staticmethod
+    def median_blur(ksize: int) -> FrameProcessor:
+        return MedianBlur(ksize)
+
+    @staticmethod
     def adaptive_threshold(max_value: int = 255,
                            adaptive_method: int = cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                            threshold_type: int = cv2.THRESH_BINARY,
@@ -175,7 +188,9 @@ class ReferenceFrame:
 
 
 class ReferenceFrameTemplate(ReferenceFrame):
-    def __init__(self, template: Frame, threshold: float, frame_processor: FrameProcessor):
+    def __init__(self, template: Frame, threshold: float, frame_processor: FrameProcessor, preprocessed: bool = True):
+        if not preprocessed:
+            template = frame_processor.process_frame(template)
         self.template: Final = template
         self.threshold: Final = threshold
         self.frame_processor: Final = frame_processor
@@ -192,7 +207,10 @@ class ReferenceFrameTemplate(ReferenceFrame):
 
 class ReferenceFrameTemplateMatch(ReferenceFrame):
     def __init__(self, template: Frame, threshold: float, frame_processor: FrameProcessor,
-                 method: int = cv2.TM_CCOEFF_NORMED):
+                 method: int = cv2.TM_CCOEFF_NORMED,
+                 preprocessed: bool = True):
+        if not preprocessed:
+            template = frame_processor.process_frame(template)
         self.template: Final = template
         self.threshold: Final = threshold
         self.frame_processor: Final = frame_processor
@@ -236,50 +254,59 @@ class CompositeReferenceFrame(ReferenceFrame):
 
 
 class LoggingReferenceFrame(ReferenceFrame):
-    def __init__(self, name: str, delegate: ReferenceFrame):
+    def __init__(self, name: str, delegate: ReferenceFrame, enabled: bool = True):
         self.name: Final = name
         self.delegate: Final = delegate
+        self.enabled: Final = enabled
 
     def matches(self, frame: Frame) -> bool:
         self.get_percent_match(frame)
         matches = self.delegate.matches(frame)
-        logger.info(f"name={self.name}, matches={matches}")
+        if self.enabled:
+            logger.info(f"name={self.name}, matches={matches}")
         return matches
 
     def get_percent_match(self, frame: Frame) -> float:
         percent_match = self.delegate.get_percent_match(frame)
-        logger.info(f"name={self.name}, percent_match={percent_match}")
+        if self.enabled:
+            logger.info(f"name={self.name}, percent_match={percent_match}")
         return percent_match
 
 
 class ReferenceFrames:
     @staticmethod
     def template_from_path(filepath: pathlib.Path, threshold: float, frame_processor: FrameProcessor,
-                           flags: int = cv2.IMREAD_COLOR_BGR) -> ReferenceFrame:
-        return ReferenceFrameTemplate(cv2.imread(str(filepath.absolute()), flags), threshold, frame_processor)
+                           flags: int = cv2.IMREAD_COLOR_BGR,
+                           preprocessed: bool = True) -> ReferenceFrame:
+        return ReferenceFrameTemplate(cv2.imread(str(filepath.absolute()), flags), threshold, frame_processor,
+                                      preprocessed)
 
     @staticmethod
-    def template_from_frame(frame: Frame, threshold: float, frame_processor: FrameProcessor) -> ReferenceFrame:
-        return ReferenceFrameTemplate(frame, threshold, frame_processor)
+    def template_from_frame(frame: Frame, threshold: float, frame_processor: FrameProcessor,
+                            preprocessed: bool = True) -> ReferenceFrame:
+        return ReferenceFrameTemplate(frame, threshold, frame_processor, preprocessed)
 
     @staticmethod
     def template_match_from_path(filepath: pathlib.Path, threshold: float, frame_processor: FrameProcessor,
                                  flags: int = cv2.IMREAD_COLOR_BGR,
-                                 method: int = cv2.TM_CCOEFF_NORMED) -> ReferenceFrame:
+                                 method: int = cv2.TM_CCOEFF_NORMED,
+                                 preprocessed: bool = True) -> ReferenceFrame:
         return ReferenceFrameTemplateMatch(cv2.imread(str(filepath.absolute()), flags), threshold, frame_processor,
-                                           method)
+                                           method, preprocessed)
 
     @staticmethod
-    def template_match_from_frame(frame: Frame, threshold: float, frame_processor: FrameProcessor, method: int = cv2.TM_CCOEFF_NORMED) -> ReferenceFrame:
-        return ReferenceFrameTemplateMatch(frame, threshold, frame_processor, method)
+    def template_match_from_frame(frame: Frame, threshold: float, frame_processor: FrameProcessor,
+                                  method: int = cv2.TM_CCOEFF_NORMED,
+                                  preprocessed: bool = True) -> ReferenceFrame:
+        return ReferenceFrameTemplateMatch(frame, threshold, frame_processor, method, preprocessed)
 
     @staticmethod
     def composite(mode: CompositeReferenceFrame.Mode, *reference_frames: ReferenceFrame) -> ReferenceFrame:
         return CompositeReferenceFrame(mode, *reference_frames)
 
     @staticmethod
-    def logging(name: str, delegate: ReferenceFrame) -> ReferenceFrame:
-        return LoggingReferenceFrame(name, delegate)
+    def logging(name: str, delegate: ReferenceFrame, enabled: bool = True) -> ReferenceFrame:
+        return LoggingReferenceFrame(name, delegate, enabled)
 
 
 class ReferenceFrameEnum(ReferenceFrame, Enum):
