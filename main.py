@@ -1,3 +1,4 @@
+import time
 import traceback
 
 import click
@@ -32,7 +33,8 @@ def main(host: str, port: int, source: int, resets: int) -> None:
                     target_appeared=RayquazaReferenceFrames.TARGET_APPEARED,
                     target_dialog=RayquazaReferenceFrames.TARGET_DIALOG,
                 ),
-                baseline=rayquaza.load_baseline()
+                baseline=rayquaza.load_baseline(),
+                resets=resets
             )
 
             # Legends ZA

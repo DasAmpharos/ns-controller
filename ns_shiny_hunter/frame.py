@@ -189,6 +189,7 @@ class ReferenceFrame:
 
 class ReferenceFrameTemplate(ReferenceFrame):
     def __init__(self, template: Frame, threshold: float, frame_processor: FrameProcessor, preprocessed: bool = True):
+        self.preprocessed: Final = preprocessed
         if not preprocessed:
             template = frame_processor.process_frame(template)
         self.template: Final = template
@@ -209,6 +210,7 @@ class ReferenceFrameTemplateMatch(ReferenceFrame):
     def __init__(self, template: Frame, threshold: float, frame_processor: FrameProcessor,
                  method: int = cv2.TM_CCOEFF_NORMED,
                  preprocessed: bool = True):
+        self.preprocessed: Final = preprocessed
         if not preprocessed:
             template = frame_processor.process_frame(template)
         self.template: Final = template

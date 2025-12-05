@@ -4,7 +4,8 @@ from ns_shiny_hunter.bdsp.scripts.ramanas_park.rayquaza.frames import RayquazaRe
 
 if __name__ == '__main__':
     for ref_frame in RayquazaReferenceFrames:
-        cv2.imwrite(f'{ref_frame.name.lower()}.png', ref_frame.value.delegate.template)
+        if not ref_frame.value.delegate.preprocessed:
+            cv2.imwrite(f'{ref_frame.name.lower()}.png', ref_frame.value.delegate.template)
 
     # frames_dir = pathlib.Path(__file__).parent.parent / "frames"
     # frames_dir.mkdir(parents=True, exist_ok=True)

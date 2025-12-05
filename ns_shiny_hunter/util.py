@@ -10,8 +10,9 @@ def get_brightness(frame: Frame) -> float:
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     return frame.mean()
 
+
 def is_outlier(value: float,
-               values: deque[float],
+               values: list[float],
                lower_percentile: int = 1,
                upper_percentile: int = 99) -> bool:
     p1 = np.percentile(values, lower_percentile)

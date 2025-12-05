@@ -64,11 +64,11 @@ class RayquazaReferenceFrames(ReferenceFrameEnum):
     POKEMON_IN_BATTLE = ReferenceFrames.logging(
         "POKEMON_IN_BATTLE",
         ReferenceFrames.template_from_path(
-            threshold=0.9,
+            threshold=0.85,
             filepath=DIR / "pokemon-in-battle.png",
             flags=cv2.IMREAD_GRAYSCALE,
             frame_processor=FrameProcessors.all(
-                FrameProcessors.crop_points((113, 603), (350, 647)),
+                FrameProcessors.crop_points((113, 603), (201, 635)),
                 FrameProcessors.CVT_COLOR_BGR2GRAY,
                 FrameProcessors.gaussian_blur((5, 5), 0.5, 0.5),
                 FrameProcessors.MEDIAN_BLUR_DEFAULT,
