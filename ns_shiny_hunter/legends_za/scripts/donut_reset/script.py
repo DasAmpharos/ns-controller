@@ -104,7 +104,7 @@ class DonutResetScript:
                     break
 
                 while not Switch2ReferenceFrames.HOME_MENU.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.HOME)
+                    self.controller.click(Button.HOME, down=0.1, post_delay=1.5)
                 self.controller.click(Button.X)
         except KeyboardInterrupt:
             print(f"\nCompleted {self.resets} resets.")
