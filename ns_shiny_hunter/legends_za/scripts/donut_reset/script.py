@@ -67,11 +67,11 @@ class DonutResetScript:
                 self.controller.clear()
                 # Interact with Ansha's Donuts
                 while not DonutResetReferenceFrames.BERRY_SELECTION.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.A, post_delay=0.25)
+                    self.controller.click(Button.A, post_delay=0.275)
 
                 # Navigate to Hyper Tanga Berry
                 while not DonutResetReferenceFrames.HYPER_TANGA_BERRY.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.DPAD_UP, down=0.05, post_delay=0.2)
+                    self.controller.click(Button.DPAD_UP, post_delay=0.275)
                 # Select 4 Hyper Tanga Berries
                 time.sleep(0.5)
                 for _ in range(4):

@@ -50,7 +50,7 @@ class NsControllerClient:
         if post_delay:
             time.sleep(post_delay)
 
-    def click(self, *buttons: Button, down: float = 0.1, post_delay: float | None = 0.1) -> None:
+    def click(self, *buttons: Button, down: float = 0.05, post_delay: float | None = 0.1) -> None:
         """
         Simulate a button click (press and release after a delay).
         Args:
