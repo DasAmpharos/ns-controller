@@ -3,10 +3,11 @@ import time
 from typing import Final
 
 import pytesseract
+from loguru import logger
 
-from ns_controller.client.client import NsControllerClient
+from ns_controller.client import NsControllerClient
 from ns_controller.pb.ns_controller_pb2 import Button
-from ns_shiny_hunter.frame import Frame, FrameProcessors
+from ns_shiny_hunter.frame import Frame, FrameProcessors, ReferenceFrame
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.frames import LegendsZAReferenceFrames
 from ns_shiny_hunter.legends_za.scripts.donut_reset.frames import DonutResetReferenceFrames
@@ -33,76 +34,105 @@ class DonutResetScript:
         self.targets = targets
         self.resets = resets
 
+    def sync_click(self, *buttons: Button, post_delay: float = 0.25):
+        """
+        Clicks buttons and consumes frames to wait for the video feed to update.
+        This prevents acting on old frames (latency compensation).
+        """
+        self.frame_grabber.clear_queue()
+        self.controller.click(*buttons)
+
+        # Assume 60 FPS. Wait for the delay by reading actual frames.
+        # This ensures we are synced with the capture card, not just wall clock time.
+        for _ in range(int(post_delay * 60)):
+            self.frame_grabber.read_next(timeout=0.1)
+
+    def wait_for(self, reference_frame: ReferenceFrame, timeout: float = 3.0) -> bool:
+        """
+        Blocks and reads frames sequentially until the reference frame matches.
+        """
+        self.frame_grabber.clear_queue()
+
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            frame = self.frame_grabber.read_next(timeout=timeout)
+            if frame is not None and reference_frame.matches(frame):
+                return True
+        return False
+
+
     def run(self):
         try:
             while True:
                 self.resets += 1
-                print(f"Reset #{self.resets}...")
+                logger.info(f"Reset #{self.resets}...")
+
                 # Turbo A until on title screen
-                while not DonutResetReferenceFrames.TITLE_SCREEN.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.A)
+                # Use sync_click to ensure we don't spam faster than the feed updates
+                while not self.wait_for(DonutResetReferenceFrames.TITLE_SCREEN):
+                    self.sync_click(Button.A, post_delay=0.2)
                 # Load backup data
-                time.sleep(0.5)
-                self.controller.click(Button.B, Button.X, Button.DPAD_UP, post_delay=0.5)
-                while DonutResetReferenceFrames.LOAD_BACKUP_DATA.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.A)
-                # Open map
-                while not LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.PLUS, post_delay=0.25)
-                # Select Hotel Z on map and fast travel
-                time.sleep(0.5)
-                self.controller.click(Button.Y, post_delay=0.5)
-                while not DonutResetReferenceFrames.MAP_HOTEL_Z.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.DPAD_DOWN)
-                while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.A)
-                # enter Hotel Z
-                self.controller.click(Button.Y, post_delay=1.5)
-                self.controller.click(Button.A)
-                time.sleep(3.0)
-                # Walk up to Ansha's Donuts
-                self.controller.set_stick(ls_y=1)
-                self.controller.press(Button.B, post_delay=1.5)
-                self.controller.set_stick(ls_y=0.0, ls_x=-1.0, post_delay=0.5)
-                self.controller.clear()
-                # Interact with Ansha's Donuts
-                while not DonutResetReferenceFrames.BERRY_SELECTION.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.A, post_delay=0.275)
-
-                # Navigate to Hyper Tanga Berry
-                while not DonutResetReferenceFrames.HYPER_TANGA_BERRY.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.DPAD_UP, post_delay=0.275)
-                # Select 4 Hyper Tanga Berries
-                time.sleep(0.5)
-                for _ in range(4):
-                    self.controller.click(Button.A)
-                # Navigate to Hyper Payapa Berry
-                # self.controller.click(Button.DPAD_UP)
-                # Navigate to Hyper Kasib Berry
-                for _ in range(2):
-                    self.controller.click(Button.DPAD_DOWN)
-                # Select 4 Berries
-                for _ in range(4):
-                    self.controller.click(Button.A)
-                # Make the donut
-                self.controller.click(Button.PLUS)
-                # Turbo A until on Donut Info screen
-                while not DonutResetReferenceFrames.DONUT_INFO.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.A)
-                while not DonutResetReferenceFrames.DONUT_INFO_READY.matches(self.frame_grabber.frame):
-                    time.sleep(0.1)
-                # Extract the donut effects
-                effects = self.extract_effects(self.frame_grabber.frame)
-                alpha_power_effect = self.get_alpha_power_effect(effects)
-                sparkling_power_effect = self.get_sparkling_power_effect(effects)
-
-                print(f"> Donut Effects: {effects}")
-                print(f'  > Alpha Power Effect: {alpha_power_effect}')
-                print(f'  > Sparkling Power Effect: {sparkling_power_effect}')
-                if self.target_found(sparkling_power_effect, alpha_power_effect):
-                    break
-                self.controller.click(Button.HOME, post_delay=1.2)
-                self.controller.click(Button.X)
+                self.sync_click(Button.B, Button.X, Button.DPAD_UP, post_delay=0.5)
+                while self.wait_for(DonutResetReferenceFrames.LOAD_BACKUP_DATA):
+                    self.sync_click(Button.A, post_delay=0.1)
+                break
+                # # Open map
+                # while not LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
+                #     self.controller.click(Button.PLUS, post_delay=0.25)
+                # # Select Hotel Z on map and fast travel
+                # time.sleep(0.5)
+                # self.controller.click(Button.Y, post_delay=0.5)
+                # while not DonutResetReferenceFrames.MAP_HOTEL_Z.matches(self.frame_grabber.frame):
+                #     self.controller.click(Button.DPAD_DOWN)
+                # while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
+                #     self.controller.click(Button.A)
+                # # enter Hotel Z
+                # self.controller.click(Button.Y, post_delay=1.5)
+                # self.controller.click(Button.A)
+                # time.sleep(3.0)
+                # # Walk up to Ansha's Donuts
+                # self.controller.set_stick(ls_y=1)
+                # self.controller.press(Button.B, post_delay=1.5)
+                # self.controller.set_stick(ls_y=0.0, ls_x=-1.0, post_delay=0.5)
+                # self.controller.clear()
+                # # Interact with Ansha's Donuts
+                # while not DonutResetReferenceFrames.BERRY_SELECTION.matches(self.frame_grabber.frame):
+                #     self.controller.click(Button.A, post_delay=0.275)
+                #
+                # # Navigate to Hyper Tanga Berry
+                # while not DonutResetReferenceFrames.HYPER_TANGA_BERRY.matches(self.frame_grabber.frame):
+                #     self.controller.click(Button.DPAD_UP, post_delay=0.275)
+                # # Select 4 Hyper Tanga Berries
+                # time.sleep(0.5)
+                # for _ in range(4):
+                #     self.controller.click(Button.A)
+                # # Navigate to Hyper Payapa Berry
+                # # self.controller.click(Button.DPAD_UP)
+                # # Navigate to Hyper Kasib Berry
+                # for _ in range(2):
+                #     self.controller.click(Button.DPAD_DOWN)
+                # # Select 4 Berries
+                # for _ in range(4):
+                #     self.controller.click(Button.A)
+                # # Make the donut
+                # self.controller.click(Button.PLUS)
+                # # Turbo A until on Donut Info screen
+                # while not DonutResetReferenceFrames.DONUT_INFO.matches(self.frame_grabber.frame):
+                #     self.controller.click(Button.A)
+                # while not DonutResetReferenceFrames.DONUT_INFO_READY.matches(self.frame_grabber.frame):
+                #     time.sleep(0.1)
+                # # Extract the donut effects
+                # effects = self.extract_effects(self.frame_grabber.frame)
+                # alpha_power_effect = self.get_alpha_power_effect(effects)
+                # sparkling_power_effect = self.get_sparkling_power_effect(effects)
+                #
+                # print(f"> Donut Effects: {effects}")
+                # print(f'  > Alpha Power Effect: {alpha_power_effect}')
+                # print(f'  > Sparkling Power Effect: {sparkling_power_effect}')
+                # if self.target_found(sparkling_power_effect, alpha_power_effect):
+                #     break
+                # self.controller.click(Button.HOME, post_delay=1.2)
+                # self.controller.click(Button.X)
         except KeyboardInterrupt:
             print(f"\nCompleted {self.resets} resets.")
             raise

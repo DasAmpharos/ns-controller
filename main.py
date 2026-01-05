@@ -3,8 +3,8 @@ import traceback
 
 import click
 
-from ns_controller.client.client import NsControllerClient
-from ns_controller.client.transport.transport import NsControllerTransport
+from ns_controller.client import NsControllerClient
+from ns_controller.client_transport import NsControllerGrpcTransport, NsControllerNativeTransport, NsControllerTransport
 from ns_controller.controller import Controller
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
@@ -21,33 +21,29 @@ def cli():
 @click.option("--host", default=DEFAULT_HOST, help="Server host")
 @click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
 @click.option("--source", type=int, default=0, help="Video source index")
-@click.option("--imshow", help="Show video window")
 @click.option("--resets", default=0, type=int)
-def grpc(host: str, port: int, source: int, imshow: bool, resets: int) -> None:
-    from ns_controller.client.transport.grpc import NsControllerGrpcTransport
+def grpc(host: str, port: int, source: int, resets: int) -> None:
     transport = NsControllerGrpcTransport(host, port)
-    run(transport, source, imshow, resets)
+    run(transport, source, resets)
 
 
 @cli.command()
 @click.option("--hid-path", default="/dev/hidg0")
 @click.option("--source", type=int, default=0, help="Video source index")
-@click.option("--imshow", help="Show video window")
 @click.option("--resets", default=0, type=int)
-def native(hid_path: str, source: int, imshow: bool, resets: int) -> None:
-    from ns_controller.client.transport.native import NsControllerNativeTransport
+def native(hid_path: str, source: int, resets: int) -> None:
     controller = Controller()
     controller.connect(hid_path)
     transport = NsControllerNativeTransport(controller)
     time.sleep(1.0)
 
-    run(transport, source, imshow, resets)
+    run(transport, source, resets)
 
 
-def run(transport: NsControllerTransport, source: int | str, imshow: bool, resets: int = 0) -> None:
+def run(transport: NsControllerTransport, source: int | str, resets: int = 0) -> None:
     client = NsControllerClient(transport)
     try:
-        with FrameGrabber(source, imshow=imshow) as frame_grabber:
+        with FrameGrabber(source) as frame_grabber:
             pair_controller(client)
 
             # BDSP

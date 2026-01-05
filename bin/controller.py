@@ -2,16 +2,38 @@ import code
 
 import click
 
-from ns_controller.client import NsControllerGrpcClient
+from ns_controller.client import NsControllerClient
+from ns_controller.client.transport import NsControllerTransport
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
 
 
-@click.command()
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
 @click.option("--host", default=DEFAULT_HOST, help="Server host")
 @click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
-def main(host: str, port: int) -> None:
-    client = NsControllerGrpcClient(host, port)
+def grpc(host: str, port: int) -> None:
+    from ns_controller.client.transport.grpc import NsControllerGrpcTransport
+    main(NsControllerGrpcTransport(host, port))
+
+
+@cli.command()
+@click.option("--hid-path", default="/dev/hidg0")
+def native(hid_path: str) -> None:
+    from ns_controller.client.transport.native import NsControllerNativeTransport
+    from ns_controller.controller import Controller
+    controller = Controller()
+    controller.connect(hid_path)
+    transport = NsControllerNativeTransport(controller)
+    main(transport)
+
+
+def main(transport: NsControllerTransport):
+    client = NsControllerClient(transport)
     namespace = {
         "UP": Button.DPAD_UP,
         "DOWN": Button.DPAD_DOWN,
@@ -29,4 +51,4 @@ def main(host: str, port: int) -> None:
 
 
 if __name__ == '__main__':
-    main()
+    cli()
