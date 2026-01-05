@@ -1,14 +1,14 @@
 from InquirerPy import inquirer
 from loguru import logger
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.frames import LegendsZAReferenceFrames
 
 
 class SoftReset:
-    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerClient, resets: int = 0):
+    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerGrpcClient, resets: int = 0):
         self.frame_grabber = frame_grabber
         self.controller = controller
         self.resets = resets

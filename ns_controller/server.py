@@ -19,8 +19,9 @@ class NsControllerServicerImpl(NsControllerServicer):
 
     def SetState(self, request: ControllerState, context):
         # Implement your logic to handle SetState requests here
-        previous_state = self.controller.state
-        self.controller.state = request
+        previous_state = ControllerState()
+        previous_state.CopyFrom(self.controller.state)
+        self.controller.state.CopyFrom(request)
         return Ack(
             success=True,
             previous_state=previous_state

@@ -1,7 +1,7 @@
 import time
 from typing import Final
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.frames.frames import LegendsZAReferenceFrames
@@ -18,7 +18,7 @@ class FlyReset:
     def __init__(self,
                  action: tuple[float, float, float],
                  frame_grabber: FrameGrabber,
-                 controller: NsControllerClient,
+                 controller: NsControllerGrpcClient,
                  state: State = State.OVERWORLD,
                  resets: int = 1):
         self.action = action

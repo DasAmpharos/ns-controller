@@ -4,7 +4,7 @@ from typing import Final
 
 import pytesseract
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame import FrameProcessors, Frame
 from ns_shiny_hunter.frame_grabber import FrameGrabber
@@ -26,7 +26,7 @@ class DonutResetScript:
     )
     PYTESSERACT_CONFIG: Final = "--oem 3 --psm 7 -c tessedit_char_whitelist=\" .:()123ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\""
 
-    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerClient, targets: list[str], resets: int = 0):
+    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerGrpcClient, targets: list[str], resets: int = 0):
         self.frame_grabber = frame_grabber
         self.controller = controller
         self.targets = targets

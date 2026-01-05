@@ -1,11 +1,11 @@
 import time
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button, ControllerState, Stick
 
 
 class TerrakionScript:
-    def __init__(self, controller: NsControllerClient, resets: int = 0):
+    def __init__(self, controller: NsControllerGrpcClient, resets: int = 0):
         self.controller = controller
         self.total_resets = resets
         self.target_resets = 110

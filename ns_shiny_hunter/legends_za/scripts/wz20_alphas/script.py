@@ -1,6 +1,6 @@
 import time
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.frames.frames import LegendsZAReferenceFrames
@@ -9,7 +9,7 @@ from .state import State
 
 
 class WildZone20Alphas:
-    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerClient, resets: int = 1):
+    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerGrpcClient, resets: int = 1):
         self.frame_grabber = frame_grabber
         self.controller = controller
         self.state = State.OVERWORLD

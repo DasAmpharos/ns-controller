@@ -10,7 +10,7 @@ import requests
 from InquirerPy import inquirer
 from loguru import logger
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter import util
 from ns_shiny_hunter.frame import ReferenceFrame, Frame
@@ -30,7 +30,7 @@ class ScriptFrames:
 
 class RamanasParkScript:
     def __init__(self,
-                 controller: NsControllerClient,
+                 controller: NsControllerGrpcClient,
                  frame_grabber: FrameGrabber,
                  script_frames: ScriptFrames,
                  baseline: list[float],

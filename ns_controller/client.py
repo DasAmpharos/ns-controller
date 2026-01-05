@@ -1,16 +1,52 @@
 import time
+from typing import Protocol
 
 import grpc
 
+from ns_controller.controller import Controller
 from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
 from ns_controller.pb.ns_controller_pb2_grpc import NsControllerStub
 
 
-class NsControllerClient:
+class NsControllerTransport(Protocol):
+    def send(self, state: ControllerState, debug: bool = False) -> None:
+        ...
+
+    def close(self):
+        ...
+
+class NsControllerNativeTransport(NsControllerTransport):
+    def __init__(self, controller: Controller) -> None:
+        self.controller = controller
+
+    def send(self, state: ControllerState, debug: bool = False) -> None:
+        if debug:
+            print_state(state)
+        self.controller.state.CopyFrom(state)
+
+    def close(self):
+        pass
+
+
+class NsControllerGrpcTransport(NsControllerTransport):
     def __init__(self, host: str, port: int) -> None:
-        self.current_state = ControllerState(buttons=0)
         self.channel = grpc.insecure_channel(f"{host}:{port}")
         self.stub = NsControllerStub(self.channel)
+
+    def send(self, state: ControllerState, debug: bool = False) -> None:
+        if debug:
+            print_state(state)
+        self.stub.SetState(state)
+
+    def close(self):
+        """Close the gRPC channel."""
+        self.channel.close()
+
+
+class NsControllerClient:
+    def __init__(self, transport: NsControllerTransport) -> None:
+        self.state = ControllerState(buttons=0)
+        self.transport = transport
 
     def _update_buttons(self, *buttons: Button, pressed: bool) -> None:
         """
@@ -21,14 +57,9 @@ class NsControllerClient:
         """
         for button in buttons:
             if pressed:
-                self.current_state.buttons |= (1 << button)
+                self.state.buttons |= (1 << button)
             else:
-                self.current_state.buttons &= ~(1 << button)
-
-    def send(self, debug: bool = False):
-        if debug:
-            print_state(self.current_state)
-        self.stub.SetState(self.current_state)
+                self.state.buttons &= ~(1 << button)
 
     def press(self, *buttons: Button, send: bool = True, post_delay: float | None = 0.1) -> None:
         """
@@ -40,7 +71,7 @@ class NsControllerClient:
         """
         self._update_buttons(*buttons, pressed=True)
         if send:
-            self.send()
+            self.transport.send(self.state)
         if post_delay:
             time.sleep(post_delay)
 
@@ -54,7 +85,7 @@ class NsControllerClient:
         """
         self._update_buttons(*buttons, pressed=False)
         if send:
-            self.send()
+            self.transport.send(self.state)
         if post_delay:
             time.sleep(post_delay)
 
@@ -84,12 +115,12 @@ class NsControllerClient:
             send: If True, immediately send the state to the server
             post_delay: Optional delay in seconds after setting the sticks
         """
-        self.current_state.ls.x = ls_x
-        self.current_state.ls.y = ls_y
-        self.current_state.rs.x = rs_x
-        self.current_state.rs.y = rs_y
+        self.state.ls.x = ls_x
+        self.state.ls.y = ls_y
+        self.state.rs.x = rs_x
+        self.state.rs.y = rs_y
         if send:
-            self.send()
+            self.transport.send(self.state)
         if post_delay:
             time.sleep(post_delay)
 
@@ -101,9 +132,9 @@ class NsControllerClient:
             send: If True, immediately send the state to the server
             post_delay: Optional delay in seconds after setting the state
         """
-        self.current_state.CopyFrom(controller_state)
+        self.state.CopyFrom(controller_state)
         if send:
-            self.send()
+            self.transport.send(self.state)
         if post_delay:
             time.sleep(post_delay)
 
@@ -129,19 +160,19 @@ class NsControllerClient:
             post_delay: Optional delay in seconds after updating the state
         """
         if buttons_press:
-            self._update_buttons(buttons_press, True)
+            self._update_buttons(*buttons_press, pressed=True)
         if buttons_release:
-            self._update_buttons(buttons_release, False)
+            self._update_buttons(*buttons_release, pressed=False)
         if ls_x is not None:
-            self.current_state.ls.x = ls_x
+            self.state.ls.x = ls_x
         if ls_y is not None:
-            self.current_state.ls.y = ls_y
+            self.state.ls.y = ls_y
         if rs_x is not None:
-            self.current_state.rs.x = rs_x
+            self.state.rs.x = rs_x
         if rs_y is not None:
-            self.current_state.rs.y = rs_y
+            self.state.rs.y = rs_y
         if send:
-            self.send()
+            self.transport.send(self.state)
         if post_delay:
             time.sleep(post_delay)
 
@@ -151,14 +182,13 @@ class NsControllerClient:
         Args:
             post_delay: Optional delay in seconds after clearing the state
         """
-        self.current_state = ControllerState()
-        self.send()
+        self.state = ControllerState()
+        self.transport.send(self.state)
         if post_delay:
             time.sleep(post_delay)
 
     def close(self):
-        """Close the gRPC channel."""
-        self.channel.close()
+        self.transport.close()
 
 
 def print_state(state: ControllerState):

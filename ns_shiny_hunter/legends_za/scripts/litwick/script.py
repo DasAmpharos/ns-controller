@@ -1,12 +1,12 @@
 import time
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 
 
 class LitwickScript:
-    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerClient, resets: int = 0):
+    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerGrpcClient, resets: int = 0):
         self.frame_grabber = frame_grabber
         self.controller = controller
         self.resets = resets

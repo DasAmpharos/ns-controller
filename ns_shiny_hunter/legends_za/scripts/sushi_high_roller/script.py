@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import pytesseract
 
-from ns_controller.client import NsControllerClient
+from ns_controller.client import NsControllerGrpcClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame import Frame
 from ns_shiny_hunter.frame_grabber import FrameGrabber
@@ -17,7 +17,7 @@ from ns_shiny_hunter.legends_za.scripts.sushi_high_roller.state import State
 
 
 class SushiHighRoller:
-    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerClient, state: State = State.ENTRANCE_1):
+    def __init__(self, frame_grabber: FrameGrabber, controller: NsControllerGrpcClient, state: State = State.ENTRANCE_1):
         self.frame_grabber = frame_grabber
         self.controller = controller
         self.state_handlers: Final = MappingProxyType({
