@@ -1,46 +1,7 @@
 import time
-from typing import Protocol
 
-import grpc
-
-from ns_controller.controller import Controller
+from ns_controller.client.transport.transport import NsControllerTransport
 from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
-from ns_controller.pb.ns_controller_pb2_grpc import NsControllerStub
-
-
-class NsControllerTransport(Protocol):
-    def send(self, state: ControllerState, debug: bool = False) -> None:
-        ...
-
-    def close(self):
-        ...
-
-class NsControllerNativeTransport(NsControllerTransport):
-    def __init__(self, controller: Controller) -> None:
-        self.controller = controller
-
-    def send(self, state: ControllerState, debug: bool = False) -> None:
-        if debug:
-            print_state(state)
-        self.controller.state.CopyFrom(state)
-
-    def close(self):
-        pass
-
-
-class NsControllerGrpcTransport(NsControllerTransport):
-    def __init__(self, host: str, port: int) -> None:
-        self.channel = grpc.insecure_channel(f"{host}:{port}")
-        self.stub = NsControllerStub(self.channel)
-
-    def send(self, state: ControllerState, debug: bool = False) -> None:
-        if debug:
-            print_state(state)
-        self.stub.SetState(state)
-
-    def close(self):
-        """Close the gRPC channel."""
-        self.channel.close()
 
 
 class NsControllerClient:
@@ -189,20 +150,3 @@ class NsControllerClient:
 
     def close(self):
         self.transport.close()
-
-
-def print_state(state: ControllerState):
-    print({
-        "buttons": {
-            "mask": state.buttons,
-            "state": {name: (state.buttons & (1 << value)) != 0 for name, value in Button.items()}
-        },
-        "ls": {
-            "x": state.ls.x,
-            "y": state.ls.y
-        },
-        "rs": {
-            "x": state.rs.x,
-            "y": state.rs.y
-        }
-    })
