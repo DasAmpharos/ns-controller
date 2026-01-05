@@ -91,7 +91,7 @@ def pair_controller(client: NsControllerClient):
 
 def open_controller_menu(client: NsControllerClient):
     client.clear()
-    client.click(Button.HOME, post_delay=1)
+    client.click(Button.HOME, post_delay=1.125)
     client.click(Button.DPAD_DOWN, post_delay=0.5)
     for _ in range(6):
         client.click(Button.DPAD_RIGHT, post_delay=0.05)
