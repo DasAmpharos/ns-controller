@@ -48,7 +48,7 @@ class DonutResetScript:
                     self.controller.click(Button.A)
                 # Open map
                 while not LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.PLUS, post_delay=0.25)
+                    self.controller.click(Button.PLUS, post_delay=0.5)
                 # Select Hotel Z on map and fast travel
                 time.sleep(0.5)
                 self.controller.click(Button.Y, post_delay=0.5)
