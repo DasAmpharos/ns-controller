@@ -11,25 +11,29 @@ from ns_shiny_hunter.frame import (
 )
 
 FILEPATH: Final = pathlib.Path(__file__)
-FRAMES_DIR: Final = FILEPATH.parent / "frames"
+DIR: Final = FILEPATH.parent
 
 
 class LegendsZAReferenceFrames(ReferenceFrameEnum):
-    OPEN_MAP = ReferenceFrames.template_from_path(
-        threshold=0.1,
-        flags=cv2.IMREAD_GRAYSCALE,
-        filepath=FRAMES_DIR / "open-map.png",
-        frame_processor=FrameProcessors.all(
-            FrameProcessors.crop_rect(57, 25, 123, 21),
-            FrameProcessors.CVT_COLOR_BGR2GRAY,
-            FrameProcessors.GAUSSIAN_BLUR_DEFAULT,
-            FrameProcessors.ADAPTIVE_THRESHOLD_DEFAULT
-        )
+    OPEN_MAP = ReferenceFrames.logging(
+        name='OPEN_MAP',
+        delegate=ReferenceFrames.template_from_path(
+            threshold=0.9,
+            flags=cv2.IMREAD_GRAYSCALE,
+            filepath=DIR / "open-map.png",
+            frame_processor=FrameProcessors.all(
+                FrameProcessors.crop_rect(57, 25, 123, 21),
+                FrameProcessors.CVT_COLOR_BGR2GRAY,
+                FrameProcessors.GAUSSIAN_BLUR_DEFAULT,
+                FrameProcessors.ADAPTIVE_THRESHOLD_DEFAULT
+            )
+        ),
+        enabled=False
     )
     TRAVEL_HERE = ReferenceFrames.template_from_path(
         threshold=0.01,
         flags=cv2.IMREAD_GRAYSCALE,
-        filepath=FRAMES_DIR / "travel-here.png",
+        filepath=DIR / "travel-here.png",
         frame_processor=FrameProcessors.all(
             FrameProcessors.crop_rect(582, 425, 107, 21),
             FrameProcessors.CVT_COLOR_BGR2GRAY,
@@ -39,7 +43,7 @@ class LegendsZAReferenceFrames(ReferenceFrameEnum):
     )
     OVERWORLD = ReferenceFrames.template_from_path(
         threshold=0.44,
-        filepath=FRAMES_DIR / "overworld.png",
+        filepath=DIR / "overworld.png",
         frame_processor=FrameProcessors.all(
             FrameProcessors.crop_polygon(
                 np.array(
@@ -60,7 +64,7 @@ class LegendsZAReferenceFrames(ReferenceFrameEnum):
     PRESS_A = ReferenceFrames.template_match_from_path(
         threshold=0.85,
         flags=cv2.IMREAD_GRAYSCALE,
-        filepath=FRAMES_DIR / "press-a.png",
+        filepath=DIR / "press-a.png",
         frame_processor=FrameProcessors.all(
             FrameProcessors.crop_rect(688, 416, 28, 720 - 416),
             FrameProcessors.CVT_COLOR_BGR2GRAY,
@@ -90,3 +94,18 @@ class LegendsZAReferenceFrames(ReferenceFrameEnum):
     #         FrameProcessors.ADAPTIVE_THRESHOLD_DEFAULT
     #     )
     # )
+
+WIDTH: Final = 1280
+HEIGHT: Final = 720
+CENTER_X: Final = WIDTH // 2
+CENTER_Y: Final = HEIGHT // 2
+
+ENTER_ICON_TEMPLATE: Final = ReferenceFrames.template_match_from_path(
+    filepath=DIR / "enter-icon.png",
+    threshold=0.70,
+    flags=cv2.IMREAD_GRAYSCALE,
+    frame_processor=FrameProcessors.all(
+        FrameProcessors.crop_rect(CENTER_X - WIDTH // 4, CENTER_Y + HEIGHT // 4, WIDTH // 2, HEIGHT // 2),
+        FrameProcessors.CVT_COLOR_BGR2GRAY
+    ),
+)

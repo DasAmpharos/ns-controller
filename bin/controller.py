@@ -21,7 +21,9 @@ def main(host: str, port: int) -> None:
     }
     code.interact(local={
         "controller": client,
+        "clear": client.clear,
         "click": client.click,
+        "set_stick": client.set_stick,
         **namespace
     })
 

@@ -225,6 +225,7 @@ class ReferenceFrameTemplateMatch(ReferenceFrame):
         frame = self.frame_processor.process_frame(frame)
         result = cv2.matchTemplate(frame, self.template, self.method)
         min_val, max_val, _, _ = cv2.minMaxLoc(result)
+        # print(f'min_val={min_val}, max_val={max_val}')
         if self.method == cv2.TM_SQDIFF or self.method == cv2.TM_SQDIFF_NORMED:
             return 1.0 - min_val  # Invert for consistency
         return max_val
