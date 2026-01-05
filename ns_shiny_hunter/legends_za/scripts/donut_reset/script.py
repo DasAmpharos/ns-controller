@@ -101,6 +101,8 @@ class DonutResetScript:
                 print(f'  > Sparkling Power Effect: {sparkling_power_effect}')
                 if self.target_found(sparkling_power_effect, alpha_power_effect):
                     break
+
+                while not
                 self.controller.click(Button.HOME, post_delay=1.2)
                 self.controller.click(Button.X)
         except KeyboardInterrupt:
