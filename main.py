@@ -84,7 +84,7 @@ def run(transport: NsControllerTransport, source: int | str, imshow: bool, reset
 
 
 def pair_controller(client: NsControllerClient):
-    client.click(Button.L, Button.R, post_delay=0.5)
+    client.click(Button.L, Button.R, post_delay=0.75)
     client.click(Button.HOME, post_delay=3)
     client.click(Button.A, post_delay=3)
 
