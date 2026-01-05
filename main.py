@@ -1,3 +1,4 @@
+import time
 import traceback
 
 import click
@@ -38,6 +39,8 @@ def native(hid_path: str, source: int, imshow: bool, resets: int) -> None:
     controller = Controller()
     controller.connect(hid_path)
     transport = NsControllerNativeTransport(controller)
+    time.sleep(1.0)
+
     run(transport, source, imshow, resets)
 
 
