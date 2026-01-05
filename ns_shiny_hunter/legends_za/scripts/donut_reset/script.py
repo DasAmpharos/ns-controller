@@ -57,7 +57,7 @@ class DonutResetScript:
                 while not LegendsZAReferenceFrames.OVERWORLD.matches(self.frame_grabber.frame):
                     self.controller.click(Button.A)
                 # enter Hotel Z
-                self.controller.click(Button.Y, post_delay=1.5)
+                self.controller.click(Button.Y, post_delay=1.25)
                 self.controller.click(Button.A)
                 time.sleep(3.0)
                 # Walk up to Ansha's Donuts
