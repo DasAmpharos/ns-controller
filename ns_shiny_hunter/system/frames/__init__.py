@@ -33,3 +33,15 @@ class Switch2ReferenceFrames(ReferenceFrames):
         ),
         preprocessed=False
     )
+    HOME_MENU = ReferenceFrames.template_from_path(
+        threshold=0.9,
+        filepath=FRAMES_DIR / "sw2-home-menu.jpg",
+        frame_processor=FrameProcessors.all(
+            FrameProcessors.crop_points((925, 667), (1120, 694)),
+            FrameProcessors.CVT_COLOR_BGR2GRAY,
+            FrameProcessors.gaussian_blur((5, 5), 0.5, 0.5),
+            FrameProcessors.MEDIAN_BLUR_DEFAULT,
+            FrameProcessors.ADAPTIVE_THRESHOLD_DEFAULT
+        ),
+        preprocessed=False
+    )

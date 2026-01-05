@@ -10,6 +10,7 @@ from ns_shiny_hunter.frame import Frame, FrameProcessors
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.frames import LegendsZAReferenceFrames
 from ns_shiny_hunter.legends_za.scripts.donut_reset.frames import DonutResetReferenceFrames
+from ns_shiny_hunter.system.frames import Switch2ReferenceFrames
 
 
 class Ingredient:
@@ -102,8 +103,8 @@ class DonutResetScript:
                 if self.target_found(sparkling_power_effect, alpha_power_effect):
                     break
 
-                while not
-                self.controller.click(Button.HOME, post_delay=1.2)
+                while not Switch2ReferenceFrames.HOME_MENU.matches(self.frame_grabber.frame):
+                    self.controller.click(Button.HOME)
                 self.controller.click(Button.X)
         except KeyboardInterrupt:
             print(f"\nCompleted {self.resets} resets.")
