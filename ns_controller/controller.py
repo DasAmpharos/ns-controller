@@ -45,7 +45,7 @@ class Controller:
 
                     try:
                         n = self.fp.readinto(buf)
-                        logger.debug(f"read: {buf[:n].hex()}")
+                        logger.trace(f"read: {buf[:n].hex()}")
                     except Exception as e:
                         logger.error(f"Read error: {e}")
                         continue
@@ -84,21 +84,21 @@ class Controller:
                                     data = spi_rom_data.get(buf[12])
                                     if data:
                                         self.uart(True, buf[10], buf[11:16] + data[buf[11]:buf[11] + buf[15]])
-                                        logger.debug(
+                                        logger.trace(
                                             f"Read SPI address: {buf[12]:02x}{buf[11]:02x}[{buf[15]}] {data[buf[11]:buf[11] + buf[15]]}")
                                     else:
                                         self.uart(False, buf[10], bytes([]))
-                                        logger.debug(f"Unknown SPI address: {buf[12]:02x}[{buf[15]}]")
+                                        logger.trace(f"Unknown SPI address: {buf[12]:02x}[{buf[15]}]")
                                 case 0x21:
                                     self.uart(True, buf[10], bytes([
                                         0x01, 0x00, 0xff, 0x00, 0x03, 0x00, 0x05, 0x01
                                     ]))
                                 case _:
-                                    logger.debug(f"UART unknown request {buf[10]} {buf}")
+                                    logger.trace(f"UART unknown request {buf[10]} {buf}")
                         case 0x00 | 0x10:
                             pass
                         case _:
-                            logger.debug(f"unknown request {buf[0]}")
+                            logger.trace(f"unknown request {buf[0]}")
             except Exception as e:
                 logger.exception(f"Communication thread crashed: {e}")
                 raise
@@ -110,9 +110,9 @@ class Controller:
         data = bytes([ack, cmd]) + buf + bytes(62 - len(buf))
         try:
             self.fp.write(data)
-            logger.debug(f"write: {data.hex()}")
+            logger.trace(f"write: {data.hex()}")
             if ack == 0x30:
-                logger.debug(f"input report: {self.get_input_buffer().hex()}")
+                logger.trace(f"input report: {self.get_input_buffer().hex()}")
         except Exception as e:
             logger.error(f"Failed to write to device: {e}")
             raise
@@ -198,7 +198,7 @@ class Controller:
 
     def close(self):
         if self.fp is None:
-            logger.debug("Already closed")
+            logger.warning("Already closed")
             return
         self.stop_counter.set()
         self.stop_comm.set()
