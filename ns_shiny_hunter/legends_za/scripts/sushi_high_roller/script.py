@@ -77,7 +77,7 @@ class SushiHighRoller:
     def state_handler_battle(self):
         print('State.BATTLE')
         if SushiHighRollerReferenceFrames.BATTLE.matches(self.frame_grabber.frame):
-            frame = ATTACK_FRAME_PROCESSOR.prepare_frame(self.frame_grabber.frame)
+            frame = ATTACK_FRAME_PROCESSOR.process_frame(self.frame_grabber.frame)
             text = pytesseract.image_to_string(frame)
             text = text.strip().lower()
             print(f'> Detected attack: "{text}"')
@@ -132,7 +132,7 @@ class SushiHighRoller:
     def state_handler_pokemon_center_dialog(self):
         def select_option(option_index: int):
             while True:
-                frame = POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR.prepare_frame(self.frame_grabber.frame)
+                frame = POKEMON_CENTER_DIALOG_OPTIONS_FRAME_PROCESSOR.process_frame(self.frame_grabber.frame)
                 if self.detect_highlighted_option(frame, 3) == option_index:
                     self.controller.click(Button.A)
                     break

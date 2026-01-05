@@ -7,6 +7,7 @@ import cv2
 from loguru import logger
 
 from .frame import Frame
+from .legends_za.frames import CENTER_X, WIDTH
 
 
 class FrameGrabber:
