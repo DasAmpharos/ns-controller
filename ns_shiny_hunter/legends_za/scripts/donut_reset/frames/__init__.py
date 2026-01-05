@@ -135,3 +135,15 @@ class DonutResetReferenceFrames(ReferenceFrameEnum):
         ),
         False
     )
+    ANSHAS_DONUTS = ReferenceFrames.template_from_path(
+        threshold=0.9,
+        filepath=DIR / "anshas-donuts-dialog.jpg",
+        frame_processor=FrameProcessors.all(
+            FrameProcessors.crop_points((958, 448), (1129, 468)),
+            FrameProcessors.CVT_COLOR_BGR2GRAY,
+            FrameProcessors.GAUSSIAN_BLUR_DEFAULT,
+            FrameProcessors.ADAPTIVE_THRESHOLD_DEFAULT,
+            FrameProcessors.MEDIAN_BLUR_DEFAULT
+        ),
+        preprocessed=False
+    )
