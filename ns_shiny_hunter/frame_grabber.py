@@ -28,9 +28,8 @@ class FrameGrabber:
         self.video_capture_thread: Final = threading.Thread(target=self.run)
         self.running: threading.Event = threading.Event()
 
-        # Queue for "processing" (sequential, blocking access)
-        # Use a small maxsize so we don't store thousands of frames if processing is slow
-        self.frame_queue: Final = queue.Queue(maxsize=60)
+        self._frame_lock: Final = threading.Lock()
+        self._frame: Frame | None = None
 
     def __enter__(self):
         self.start()
@@ -50,28 +49,15 @@ class FrameGrabber:
             self.video_capture_thread.join()
         self.video_capture.release()
 
-    def clear_queue(self):
-        """Discards all pending frames in the processing queue."""
-        with self.frame_queue.mutex:
-            self.frame_queue.queue.clear()
-
-    def read_next(self, timeout: float = 1.0) -> Frame | None:
-        try:
-            return self.frame_queue.get(timeout=timeout)
-        except queue.Empty:
-            return None
-
     def run(self):
         while not self.running.is_set():
             success, frame = self.video_capture.read()
             if not success:
                 continue
+            with self._frame_lock:
+                self._frame = frame
 
-            # Update processing queue
-            # If queue is full, remove oldest item to make room (drop frame)
-            if self.frame_queue.full():
-                try:
-                    self.frame_queue.get_nowait()
-                except queue.Empty:
-                    pass
-            self.frame_queue.put(frame)
+    @property
+    def frame(self) -> Frame | None:
+        with self._frame_lock:
+            return self._frame.copy() if self._frame is not None else None

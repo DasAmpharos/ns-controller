@@ -34,33 +34,6 @@ class DonutResetScript:
         self.targets = targets
         self.resets = resets
 
-    def sync_click(self, *buttons: Button, post_delay: float = 0.25):
-        """
-        Clicks buttons and consumes frames to wait for the video feed to update.
-        This prevents acting on old frames (latency compensation).
-        """
-        self.frame_grabber.clear_queue()
-        self.controller.click(*buttons)
-
-        # Assume 60 FPS. Wait for the delay by reading actual frames.
-        # This ensures we are synced with the capture card, not just wall clock time.
-        for _ in range(int(post_delay * 60)):
-            self.frame_grabber.read_next(timeout=0.1)
-
-    def wait_for(self, reference_frame: ReferenceFrame, timeout: float = 3.0) -> bool:
-        """
-        Blocks and reads frames sequentially until the reference frame matches.
-        """
-        self.frame_grabber.clear_queue()
-
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            frame = self.frame_grabber.read_next(timeout=timeout)
-            if frame is not None and reference_frame.matches(frame):
-                return True
-        return False
-
-
     def run(self):
         try:
             while True:
@@ -68,13 +41,12 @@ class DonutResetScript:
                 logger.info(f"Reset #{self.resets}...")
 
                 # Turbo A until on title screen
-                # Use sync_click to ensure we don't spam faster than the feed updates
-                while not self.wait_for(DonutResetReferenceFrames.TITLE_SCREEN):
-                    self.sync_click(Button.A, post_delay=0.2)
+                while not DonutResetReferenceFrames.TITLE_SCREEN.matches(self.frame_grabber.frame):
+                    self.controller.click(Button.A)
                 # Load backup data
-                self.sync_click(Button.B, Button.X, Button.DPAD_UP, post_delay=0.5)
-                while self.wait_for(DonutResetReferenceFrames.LOAD_BACKUP_DATA):
-                    self.sync_click(Button.A, post_delay=0.1)
+                self.controller.click(Button.B, Button.X, Button.DPAD_UP, post_delay=0.5)
+                while DonutResetReferenceFrames.LOAD_BACKUP_DATA.matches(self.frame_grabber.frame):
+                    self.controller.click(Button.A)
                 break
                 # # Open map
                 # while not LegendsZAReferenceFrames.OPEN_MAP.matches(self.frame_grabber.frame):
