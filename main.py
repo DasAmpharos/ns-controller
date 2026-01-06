@@ -83,13 +83,13 @@ def run(transport: NsControllerTransport, source: int | str, imshow: bool, reset
 
 def pair_controller(client: NsControllerClient):
     client.click(Button.L, Button.R, post_delay=0.75)
-    client.click(Button.HOME, post_delay=3)
+    client.click(Button.HOME, down=0.5, post_delay=3)
     client.click(Button.A, post_delay=3)
 
 
 def open_controller_menu(client: NsControllerClient):
     client.clear()
-    client.click(Button.HOME, post_delay=1.125)
+    client.click(Button.HOME, down=0.5, post_delay=1.125)
     client.click(Button.DPAD_DOWN, post_delay=0.5)
     for _ in range(6):
         client.click(Button.DPAD_RIGHT, post_delay=0.05)
