@@ -1,6 +1,6 @@
 import time
 
-from ns_controller.client.transport.transport import NsControllerTransport
+from .client_transport import NsControllerTransport
 from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
 
 
