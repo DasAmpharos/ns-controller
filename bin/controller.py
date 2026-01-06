@@ -2,7 +2,7 @@ import code
 
 import click
 
-from ns_controller.client.client import NsControllerClient
+from ns_controller.client import NsControllerClient
 from ns_controller.client.transport.grpc import NsControllerGrpcTransport
 from ns_controller.client.transport.native import NsControllerNativeTransport
 from ns_controller.client.transport.transport import NsControllerTransport

@@ -4,7 +4,7 @@ from typing import Final
 
 import pytesseract
 
-from ns_controller.client.client import NsControllerClient
+from ns_controller.client import NsControllerClient
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_shiny_hunter.frame import Frame, FrameProcessors
 from ns_shiny_hunter.frame_grabber import FrameGrabber
