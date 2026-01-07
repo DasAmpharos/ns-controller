@@ -1,5 +1,4 @@
 from concurrent import futures
-from concurrent import futures
 from typing import Final
 
 import click
