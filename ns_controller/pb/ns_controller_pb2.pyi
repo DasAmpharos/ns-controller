@@ -1,7 +1,9 @@
+from google.protobuf import empty_pb2 as _empty_pb2
+from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Mapping as _Mapping
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
@@ -28,6 +30,11 @@ class Button(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     DPAD_RIGHT: _ClassVar[Button]
     SL: _ClassVar[Button]
     SR: _ClassVar[Button]
+
+class Stick(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    LS: _ClassVar[Stick]
+    RS: _ClassVar[Stick]
 A: Button
 B: Button
 X: Button
@@ -48,8 +55,10 @@ DPAD_LEFT: Button
 DPAD_RIGHT: Button
 SL: Button
 SR: Button
+LS: Stick
+RS: Stick
 
-class Stick(_message.Message):
+class Position(_message.Message):
     __slots__ = ("x", "y")
     X_FIELD_NUMBER: _ClassVar[int]
     Y_FIELD_NUMBER: _ClassVar[int]
@@ -63,14 +72,34 @@ class ControllerState(_message.Message):
     LS_FIELD_NUMBER: _ClassVar[int]
     RS_FIELD_NUMBER: _ClassVar[int]
     buttons: int
-    ls: Stick
-    rs: Stick
-    def __init__(self, buttons: _Optional[int] = ..., ls: _Optional[_Union[Stick, _Mapping]] = ..., rs: _Optional[_Union[Stick, _Mapping]] = ...) -> None: ...
+    ls: Position
+    rs: Position
+    def __init__(self, buttons: _Optional[int] = ..., ls: _Optional[_Union[Position, _Mapping]] = ..., rs: _Optional[_Union[Position, _Mapping]] = ...) -> None: ...
 
-class Ack(_message.Message):
-    __slots__ = ("success", "previous_state")
-    SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    PREVIOUS_STATE_FIELD_NUMBER: _ClassVar[int]
-    success: bool
-    previous_state: ControllerState
-    def __init__(self, success: bool = ..., previous_state: _Optional[_Union[ControllerState, _Mapping]] = ...) -> None: ...
+class ClickRequest(_message.Message):
+    __slots__ = ("buttons", "duration")
+    BUTTONS_FIELD_NUMBER: _ClassVar[int]
+    DURATION_FIELD_NUMBER: _ClassVar[int]
+    buttons: _containers.RepeatedScalarFieldContainer[Button]
+    duration: float
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., duration: _Optional[float] = ...) -> None: ...
+
+class PressRequest(_message.Message):
+    __slots__ = ("buttons",)
+    BUTTONS_FIELD_NUMBER: _ClassVar[int]
+    buttons: _containers.RepeatedScalarFieldContainer[Button]
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ...) -> None: ...
+
+class ReleaseRequest(_message.Message):
+    __slots__ = ("buttons",)
+    BUTTONS_FIELD_NUMBER: _ClassVar[int]
+    buttons: _containers.RepeatedScalarFieldContainer[Button]
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ...) -> None: ...
+
+class StickRequest(_message.Message):
+    __slots__ = ("stick", "position")
+    STICK_FIELD_NUMBER: _ClassVar[int]
+    POSITION_FIELD_NUMBER: _ClassVar[int]
+    stick: Stick
+    position: Position
+    def __init__(self, stick: _Optional[_Union[Stick, str]] = ..., position: _Optional[_Union[Position, _Mapping]] = ...) -> None: ...

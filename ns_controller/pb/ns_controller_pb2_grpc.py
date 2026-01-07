@@ -3,6 +3,7 @@
 import grpc
 import warnings
 
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from . import ns_controller_pb2 as ns__controller__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
@@ -26,9 +27,7 @@ if _version_not_supported:
 
 
 class NsControllerStub(object):
-    """--- Service ---
-
-    """
+    """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
         """Constructor.
@@ -36,34 +35,84 @@ class NsControllerStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.Click = channel.unary_unary(
+                '/ns_controller.pb.NsController/Click',
+                request_serializer=ns__controller__pb2.ClickRequest.SerializeToString,
+                response_deserializer=ns__controller__pb2.ControllerState.FromString,
+                _registered_method=True)
+        self.Press = channel.unary_unary(
+                '/ns_controller.pb.NsController/Press',
+                request_serializer=ns__controller__pb2.PressRequest.SerializeToString,
+                response_deserializer=ns__controller__pb2.ControllerState.FromString,
+                _registered_method=True)
+        self.Release = channel.unary_unary(
+                '/ns_controller.pb.NsController/Release',
+                request_serializer=ns__controller__pb2.ReleaseRequest.SerializeToString,
+                response_deserializer=ns__controller__pb2.ControllerState.FromString,
+                _registered_method=True)
+        self.SetStick = channel.unary_unary(
+                '/ns_controller.pb.NsController/SetStick',
+                request_serializer=ns__controller__pb2.StickRequest.SerializeToString,
+                response_deserializer=ns__controller__pb2.ControllerState.FromString,
+                _registered_method=True)
         self.SetState = channel.unary_unary(
                 '/ns_controller.pb.NsController/SetState',
                 request_serializer=ns__controller__pb2.ControllerState.SerializeToString,
-                response_deserializer=ns__controller__pb2.Ack.FromString,
+                response_deserializer=ns__controller__pb2.ControllerState.FromString,
                 _registered_method=True)
-        self.StreamState = channel.stream_unary(
-                '/ns_controller.pb.NsController/StreamState',
-                request_serializer=ns__controller__pb2.ControllerState.SerializeToString,
-                response_deserializer=ns__controller__pb2.Ack.FromString,
+        self.GetState = channel.unary_unary(
+                '/ns_controller.pb.NsController/GetState',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=ns__controller__pb2.ControllerState.FromString,
+                _registered_method=True)
+        self.Clear = channel.unary_unary(
+                '/ns_controller.pb.NsController/Clear',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=ns__controller__pb2.ControllerState.FromString,
                 _registered_method=True)
 
 
 class NsControllerServicer(object):
-    """--- Service ---
+    """Missing associated documentation comment in .proto file."""
 
-    """
-
-    def SetState(self, request, context):
-        """Push a single instantaneous state to the server (fire-and-forget semantics
-        with an Ack so the client can track drops/retries).
-        """
+    def Click(self, request, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def StreamState(self, request_iterator, context):
-        """Low-latency continuous updates. Client streams states; server sends acks.
-        """
+    def Press(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Release(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetStick(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Clear(self, request, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -71,15 +120,40 @@ class NsControllerServicer(object):
 
 def add_NsControllerServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'Click': grpc.unary_unary_rpc_method_handler(
+                    servicer.Click,
+                    request_deserializer=ns__controller__pb2.ClickRequest.FromString,
+                    response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
+            ),
+            'Press': grpc.unary_unary_rpc_method_handler(
+                    servicer.Press,
+                    request_deserializer=ns__controller__pb2.PressRequest.FromString,
+                    response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
+            ),
+            'Release': grpc.unary_unary_rpc_method_handler(
+                    servicer.Release,
+                    request_deserializer=ns__controller__pb2.ReleaseRequest.FromString,
+                    response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
+            ),
+            'SetStick': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetStick,
+                    request_deserializer=ns__controller__pb2.StickRequest.FromString,
+                    response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
+            ),
             'SetState': grpc.unary_unary_rpc_method_handler(
                     servicer.SetState,
                     request_deserializer=ns__controller__pb2.ControllerState.FromString,
-                    response_serializer=ns__controller__pb2.Ack.SerializeToString,
+                    response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
             ),
-            'StreamState': grpc.stream_unary_rpc_method_handler(
-                    servicer.StreamState,
-                    request_deserializer=ns__controller__pb2.ControllerState.FromString,
-                    response_serializer=ns__controller__pb2.Ack.SerializeToString,
+            'GetState': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetState,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
+            ),
+            'Clear': grpc.unary_unary_rpc_method_handler(
+                    servicer.Clear,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -90,9 +164,115 @@ def add_NsControllerServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class NsController(object):
-    """--- Service ---
+    """Missing associated documentation comment in .proto file."""
 
-    """
+    @staticmethod
+    def Click(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ns_controller.pb.NsController/Click',
+            ns__controller__pb2.ClickRequest.SerializeToString,
+            ns__controller__pb2.ControllerState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Press(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ns_controller.pb.NsController/Press',
+            ns__controller__pb2.PressRequest.SerializeToString,
+            ns__controller__pb2.ControllerState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Release(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ns_controller.pb.NsController/Release',
+            ns__controller__pb2.ReleaseRequest.SerializeToString,
+            ns__controller__pb2.ControllerState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetStick(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ns_controller.pb.NsController/SetStick',
+            ns__controller__pb2.StickRequest.SerializeToString,
+            ns__controller__pb2.ControllerState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
 
     @staticmethod
     def SetState(request,
@@ -110,7 +290,7 @@ class NsController(object):
             target,
             '/ns_controller.pb.NsController/SetState',
             ns__controller__pb2.ControllerState.SerializeToString,
-            ns__controller__pb2.Ack.FromString,
+            ns__controller__pb2.ControllerState.FromString,
             options,
             channel_credentials,
             insecure,
@@ -122,7 +302,7 @@ class NsController(object):
             _registered_method=True)
 
     @staticmethod
-    def StreamState(request_iterator,
+    def GetState(request,
             target,
             options=(),
             channel_credentials=None,
@@ -132,12 +312,39 @@ class NsController(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.stream_unary(
-            request_iterator,
+        return grpc.experimental.unary_unary(
+            request,
             target,
-            '/ns_controller.pb.NsController/StreamState',
-            ns__controller__pb2.ControllerState.SerializeToString,
-            ns__controller__pb2.Ack.FromString,
+            '/ns_controller.pb.NsController/GetState',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ns__controller__pb2.ControllerState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Clear(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ns_controller.pb.NsController/Clear',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ns__controller__pb2.ControllerState.FromString,
             options,
             channel_credentials,
             insecure,

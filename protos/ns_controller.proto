@@ -1,73 +1,83 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 
 package ns_controller.pb;
 
-// --- Inputs ---
-
-// Bit assignments for Buttons.mask (bit N corresponds to (value N))
 enum Button {
   // Face
-  A        = 0;
-  B        = 1;
-  X        = 2;
-  Y        = 3;
+  A = 0;
+  B = 1;
+  X = 2;
+  Y = 3;
 
   // Shoulders (Z* are digital on Switch)
-  L        = 4;
-  R        = 5;
-  ZL       = 6;
-  ZR       = 7;
+  L = 4;
+  R = 5;
+  ZL = 6;
+  ZR = 7;
 
   // Stick-clicks
-  L_STICK  = 8;   // L3
-  R_STICK  = 9;  // R3
+  L_STICK = 8;   // L3
+  R_STICK = 9;  // R3
 
   // System
-  PLUS     = 10;
-  MINUS    = 11;
-  HOME     = 12;
-  CAPTURE  = 13;
+  PLUS = 10;
+  MINUS = 11;
+  HOME = 12;
+  CAPTURE = 13;
 
   // D-Pad (treated as 4 digital buttons; host may also synthesize a hat)
-  DPAD_UP    = 14;
-  DPAD_DOWN  = 15;
-  DPAD_LEFT  = 16;
+  DPAD_UP = 14;
+  DPAD_DOWN = 15;
+  DPAD_LEFT = 16;
   DPAD_RIGHT = 17;
 
   // Joy-Con SL/SR (useful when emulating single Joy-Con)
-  SL       = 18;
-  SR       = 19;
+  SL = 18;
+  SR = 19;
 }
 
-// Analog stick with signed 16-bit style ranges.
-// Use the standard gamepad convention: X right+, Y up+ (document your choice).
-message Stick {
+enum Stick {
+  LS = 0;
+  RS = 1;
+}
+
+message Position {
   // Range: -1..1
   float x = 1;
   float y = 2;
 }
 
-// Full controller state at an instant.
 message ControllerState {
-  // Digital buttons
   uint64 buttons = 1;
-  // Analog sticks (use your device’s calibration before populating these)
-  Stick ls  = 2;
-  Stick rs = 3;
+  Position ls = 2;
+  Position rs = 3;
 }
 
-message Ack {
-  bool success = 1;
-  ControllerState previous_state = 2;
+message ClickRequest {
+  repeated Button buttons = 1;
+  float duration = 2;
 }
 
-// --- Service ---
+message PressRequest {
+  repeated Button buttons = 1;
+}
+
+message ReleaseRequest {
+  repeated Button buttons = 1;
+}
+
+message StickRequest {
+  Stick stick = 1;
+  Position position = 2;
+}
 
 service NsController {
-  // Push a single instantaneous state to the server (fire-and-forget semantics
-  // with an Ack so the client can track drops/retries).
-  rpc SetState(ControllerState) returns (Ack);
-
-  // Low-latency continuous updates. Client streams states; server sends acks.
-  rpc StreamState(stream ControllerState) returns (Ack);
+  rpc Click(ClickRequest) returns (ControllerState);
+  rpc Press(PressRequest) returns (ControllerState);
+  rpc Release(ReleaseRequest) returns (ControllerState);
+  rpc SetStick(StickRequest) returns (ControllerState);
+  rpc SetState(ControllerState) returns (ControllerState);
+  rpc GetState(google.protobuf.Empty) returns (ControllerState);
+  rpc Clear(google.protobuf.Empty) returns (ControllerState);
 }

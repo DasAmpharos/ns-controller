@@ -22,23 +22,32 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ns_controller.proto\x12\x10ns_controller.pb\"\x1d\n\x05Stick\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"l\n\x0f\x43ontrollerState\x12\x0f\n\x07\x62uttons\x18\x01 \x01(\x04\x12#\n\x02ls\x18\x02 \x01(\x0b\x32\x17.ns_controller.pb.Stick\x12#\n\x02rs\x18\x03 \x01(\x0b\x32\x17.ns_controller.pb.Stick\"Q\n\x03\x41\x63k\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x39\n\x0eprevious_state\x18\x02 \x01(\x0b\x32!.ns_controller.pb.ControllerState*\xd3\x01\n\x06\x42utton\x12\x05\n\x01\x41\x10\x00\x12\x05\n\x01\x42\x10\x01\x12\x05\n\x01X\x10\x02\x12\x05\n\x01Y\x10\x03\x12\x05\n\x01L\x10\x04\x12\x05\n\x01R\x10\x05\x12\x06\n\x02ZL\x10\x06\x12\x06\n\x02ZR\x10\x07\x12\x0b\n\x07L_STICK\x10\x08\x12\x0b\n\x07R_STICK\x10\t\x12\x08\n\x04PLUS\x10\n\x12\t\n\x05MINUS\x10\x0b\x12\x08\n\x04HOME\x10\x0c\x12\x0b\n\x07\x43\x41PTURE\x10\r\x12\x0b\n\x07\x44PAD_UP\x10\x0e\x12\r\n\tDPAD_DOWN\x10\x0f\x12\r\n\tDPAD_LEFT\x10\x10\x12\x0e\n\nDPAD_RIGHT\x10\x11\x12\x06\n\x02SL\x10\x12\x12\x06\n\x02SR\x10\x13\x32\x9f\x01\n\x0cNsController\x12\x44\n\x08SetState\x12!.ns_controller.pb.ControllerState\x1a\x15.ns_controller.pb.Ack\x12I\n\x0bStreamState\x12!.ns_controller.pb.ControllerState\x1a\x15.ns_controller.pb.Ack(\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ns_controller.proto\x12\x10ns_controller.pb\x1a\x1bgoogle/protobuf/empty.proto\" \n\x08Position\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"r\n\x0f\x43ontrollerState\x12\x0f\n\x07\x62uttons\x18\x01 \x01(\x04\x12&\n\x02ls\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position\x12&\n\x02rs\x18\x03 \x01(\x0b\x32\x1a.ns_controller.pb.Position\"K\n\x0c\x43lickRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x10\n\x08\x64uration\x18\x02 \x01(\x02\"9\n\x0cPressRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\";\n\x0eReleaseRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\"d\n\x0cStickRequest\x12&\n\x05stick\x18\x01 \x01(\x0e\x32\x17.ns_controller.pb.Stick\x12,\n\x08position\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position*\xd3\x01\n\x06\x42utton\x12\x05\n\x01\x41\x10\x00\x12\x05\n\x01\x42\x10\x01\x12\x05\n\x01X\x10\x02\x12\x05\n\x01Y\x10\x03\x12\x05\n\x01L\x10\x04\x12\x05\n\x01R\x10\x05\x12\x06\n\x02ZL\x10\x06\x12\x06\n\x02ZR\x10\x07\x12\x0b\n\x07L_STICK\x10\x08\x12\x0b\n\x07R_STICK\x10\t\x12\x08\n\x04PLUS\x10\n\x12\t\n\x05MINUS\x10\x0b\x12\x08\n\x04HOME\x10\x0c\x12\x0b\n\x07\x43\x41PTURE\x10\r\x12\x0b\n\x07\x44PAD_UP\x10\x0e\x12\r\n\tDPAD_DOWN\x10\x0f\x12\r\n\tDPAD_LEFT\x10\x10\x12\x0e\n\nDPAD_RIGHT\x10\x11\x12\x06\n\x02SL\x10\x12\x12\x06\n\x02SR\x10\x13*\x17\n\x05Stick\x12\x06\n\x02LS\x10\x00\x12\x06\n\x02RS\x10\x01\x32\xa2\x04\n\x0cNsController\x12J\n\x05\x43lick\x12\x1e.ns_controller.pb.ClickRequest\x1a!.ns_controller.pb.ControllerState\x12J\n\x05Press\x12\x1e.ns_controller.pb.PressRequest\x1a!.ns_controller.pb.ControllerState\x12N\n\x07Release\x12 .ns_controller.pb.ReleaseRequest\x1a!.ns_controller.pb.ControllerState\x12M\n\x08SetStick\x12\x1e.ns_controller.pb.StickRequest\x1a!.ns_controller.pb.ControllerState\x12P\n\x08SetState\x12!.ns_controller.pb.ControllerState\x1a!.ns_controller.pb.ControllerState\x12\x45\n\x08GetState\x12\x16.google.protobuf.Empty\x1a!.ns_controller.pb.ControllerState\x12\x42\n\x05\x43lear\x12\x16.google.protobuf.Empty\x1a!.ns_controller.pb.ControllerStateb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ns_controller_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_BUTTON']._serialized_start=266
-  _globals['_BUTTON']._serialized_end=477
-  _globals['_STICK']._serialized_start=41
-  _globals['_STICK']._serialized_end=70
-  _globals['_CONTROLLERSTATE']._serialized_start=72
-  _globals['_CONTROLLERSTATE']._serialized_end=180
-  _globals['_ACK']._serialized_start=182
-  _globals['_ACK']._serialized_end=263
-  _globals['_NSCONTROLLER']._serialized_start=480
-  _globals['_NSCONTROLLER']._serialized_end=639
+  _globals['_BUTTON']._serialized_start=520
+  _globals['_BUTTON']._serialized_end=731
+  _globals['_STICK']._serialized_start=733
+  _globals['_STICK']._serialized_end=756
+  _globals['_POSITION']._serialized_start=70
+  _globals['_POSITION']._serialized_end=102
+  _globals['_CONTROLLERSTATE']._serialized_start=104
+  _globals['_CONTROLLERSTATE']._serialized_end=218
+  _globals['_CLICKREQUEST']._serialized_start=220
+  _globals['_CLICKREQUEST']._serialized_end=295
+  _globals['_PRESSREQUEST']._serialized_start=297
+  _globals['_PRESSREQUEST']._serialized_end=354
+  _globals['_RELEASEREQUEST']._serialized_start=356
+  _globals['_RELEASEREQUEST']._serialized_end=415
+  _globals['_STICKREQUEST']._serialized_start=417
+  _globals['_STICKREQUEST']._serialized_end=517
+  _globals['_NSCONTROLLER']._serialized_start=759
+  _globals['_NSCONTROLLER']._serialized_end=1305
 # @@protoc_insertion_point(module_scope)

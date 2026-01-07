@@ -1,26 +1,14 @@
 import time
 
 from .client_transport import NsControllerTransport
-from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
+from ns_controller.pb.ns_controller_pb2 import ControllerState, Button, Position, Stick
+from .state import EnhancedControllerState
 
 
 class NsControllerClient:
     def __init__(self, transport: NsControllerTransport) -> None:
-        self.state = ControllerState(buttons=0)
+        self.state = EnhancedControllerState()
         self.transport = transport
-
-    def _update_buttons(self, *buttons: Button, pressed: bool) -> None:
-        """
-        Helper to set or clear button bits in the mask.
-        Args:
-            buttons: List of buttons to update
-            pressed: True to press, False to release
-        """
-        for button in buttons:
-            if pressed:
-                self.state.buttons |= (1 << button)
-            else:
-                self.state.buttons &= ~(1 << button)
 
     def press(self, *buttons: Button, send: bool = True, post_delay: float | None = 0.1) -> None:
         """
@@ -30,9 +18,9 @@ class NsControllerClient:
             send: If True, immediately send the state to the server
             post_delay: Optional delay in seconds after pressing the buttons
         """
-        self._update_buttons(*buttons, pressed=True)
+        self.state.press(*buttons)
         if send:
-            self.transport.send(self.state)
+            self.transport.send(self.state.proto)
         if post_delay:
             time.sleep(post_delay)
 
@@ -44,13 +32,13 @@ class NsControllerClient:
             send: If True, immediately send the state to the server
             post_delay: Optional delay in seconds after releasing the buttons
         """
-        self._update_buttons(*buttons, pressed=False)
+        self.state.release(*buttons)
         if send:
-            self.transport.send(self.state)
+            self.transport.send(self.state.proto)
         if post_delay:
             time.sleep(post_delay)
 
-    def click(self, *buttons: Button, down: float = 0.075, post_delay: float | None = 0.1) -> None:
+    def click(self, *buttons: Button, down: float = 0.1, post_delay: float | None = 0.1) -> None:
         """
         Simulate a button click (press and release after a delay).
         Args:
@@ -61,27 +49,18 @@ class NsControllerClient:
         self.press(*buttons, send=True, post_delay=down)
         self.release(*buttons, send=True, post_delay=post_delay)
 
-    def set_stick(self,
-                  ls_x: float = 0.0, ls_y: float = 0.0,
-                  rs_x: float = 0.0, rs_y: float = 0.0,
-                  send: bool = True,
-                  post_delay: float | None = 0.1) -> None:
+    def set_stick(self, stick: Stick, position: Position, send: bool = True, post_delay: float | None = 0.1) -> None:
         """
-        Set analog stick positions (range -1.0 to 1.0).
+        Set a specific analog stick position (range -1.0 to 1.0).
         Args:
-            ls_x: Left stick X axis (-1.0 to 1.0)
-            ls_y: Left stick Y axis (-1.0 to 1.0)
-            rs_x: Right stick X axis (-1.0 to 1.0)
-            rs_y: Right stick Y axis (-1.0 to 1.0)
+            stick: The stick to set (Stick.LS or Stick.RS)
+            position: The position to set (x and y values; each from -1.0 to 1.0)
             send: If True, immediately send the state to the server
-            post_delay: Optional delay in seconds after setting the sticks
+            post_delay: Optional delay in seconds after setting the stick
         """
-        self.state.ls.x = ls_x
-        self.state.ls.y = ls_y
-        self.state.rs.x = rs_x
-        self.state.rs.y = rs_y
+        self.state.set_stick(stick, position)
         if send:
-            self.transport.send(self.state)
+            self.transport.send(self.state.proto)
         if post_delay:
             time.sleep(post_delay)
 
@@ -93,47 +72,9 @@ class NsControllerClient:
             send: If True, immediately send the state to the server
             post_delay: Optional delay in seconds after setting the state
         """
-        self.state.CopyFrom(controller_state)
+        self.state.set_state(controller_state)
         if send:
-            self.transport.send(self.state)
-        if post_delay:
-            time.sleep(post_delay)
-
-    def update_state(self,
-                     buttons_press: list[Button] | None = None,
-                     buttons_release: list[Button] | None = None,
-                     ls_x: float | None = None,
-                     ls_y: float | None = None,
-                     rs_x: float | None = None,
-                     rs_y: float | None = None,
-                     send: bool = True,
-                     post_delay: float | None = 0.1) -> None:
-        """
-        Update multiple aspects of the controller state at once.
-        Args:
-            buttons_press: Buttons to press (adds to current state)
-            buttons_release: Buttons to release (removes from current state)
-            ls_x: Left stick X position (if specified)
-            ls_y: Left stick Y position (if specified)
-            rs_x: Right stick X position (if specified)
-            rs_y: Right stick Y position (if specified)
-            send: If True, immediately send the state to the server
-            post_delay: Optional delay in seconds after updating the state
-        """
-        if buttons_press:
-            self._update_buttons(*buttons_press, pressed=True)
-        if buttons_release:
-            self._update_buttons(*buttons_release, pressed=False)
-        if ls_x is not None:
-            self.state.ls.x = ls_x
-        if ls_y is not None:
-            self.state.ls.y = ls_y
-        if rs_x is not None:
-            self.state.rs.x = rs_x
-        if rs_y is not None:
-            self.state.rs.y = rs_y
-        if send:
-            self.transport.send(self.state)
+            self.transport.send(self.state.proto)
         if post_delay:
             time.sleep(post_delay)
 
@@ -143,8 +84,8 @@ class NsControllerClient:
         Args:
             post_delay: Optional delay in seconds after clearing the state
         """
-        self.state = ControllerState()
-        self.transport.send(self.state)
+        self.state.clear()
+        self.transport.send(self.state.proto)
         if post_delay:
             time.sleep(post_delay)
 

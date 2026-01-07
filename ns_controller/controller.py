@@ -5,12 +5,12 @@ from typing import Final
 from loguru import logger
 
 from ns_controller import spi_rom_data
-from ns_controller.pb.ns_controller_pb2 import ControllerState, Button
+from ns_controller.pb.ns_controller_pb2 import Button, ControllerState, Position
 
 
 class Controller:
-    def __init__(self):
-        self.state = ControllerState()
+    def __init__(self, state: ControllerState | None = None):
+        self.state = state or ControllerState()
 
         self.fp = None
         self.stop_comm: Final = threading.Event()
@@ -160,29 +160,29 @@ class Controller:
 
         # Named 'left' to match button byte position (Go calls this 'left')
         left = (
-                bit(0, bool(self.state.buttons >> Button.Y & 1)) |
-                bit(1, bool(self.state.buttons >> Button.X & 1)) |
-                bit(2, bool(self.state.buttons >> Button.B & 1)) |
-                bit(3, bool(self.state.buttons >> Button.A & 1)) |
-                bit(6, bool(self.state.buttons >> Button.R & 1)) |
-                bit(7, bool(self.state.buttons >> Button.ZR & 1))
+            bit(0, bool(self.state.buttons >> Button.Y & 1)) |
+            bit(1, bool(self.state.buttons >> Button.X & 1)) |
+            bit(2, bool(self.state.buttons >> Button.B & 1)) |
+            bit(3, bool(self.state.buttons >> Button.A & 1)) |
+            bit(6, bool(self.state.buttons >> Button.R & 1)) |
+            bit(7, bool(self.state.buttons >> Button.ZR & 1))
         )
         center = (
-                bit(0, bool(self.state.buttons >> Button.MINUS & 1)) |
-                bit(1, bool(self.state.buttons >> Button.PLUS & 1)) |
-                bit(2, bool(self.state.buttons >> Button.R_STICK & 1)) |
-                bit(3, bool(self.state.buttons >> Button.L_STICK & 1)) |
-                bit(4, bool(self.state.buttons >> Button.HOME & 1)) |
-                bit(5, bool(self.state.buttons >> Button.CAPTURE & 1))
+            bit(0, bool(self.state.buttons >> Button.MINUS & 1)) |
+            bit(1, bool(self.state.buttons >> Button.PLUS & 1)) |
+            bit(2, bool(self.state.buttons >> Button.R_STICK & 1)) |
+            bit(3, bool(self.state.buttons >> Button.L_STICK & 1)) |
+            bit(4, bool(self.state.buttons >> Button.HOME & 1)) |
+            bit(5, bool(self.state.buttons >> Button.CAPTURE & 1))
         )
         # Named 'right' to match button byte position (Go calls this 'right')
         right = (
-                bit(0, bool(self.state.buttons >> Button.DPAD_DOWN & 1)) |
-                bit(1, bool(self.state.buttons >> Button.DPAD_UP & 1)) |
-                bit(2, bool(self.state.buttons >> Button.DPAD_RIGHT & 1)) |
-                bit(3, bool(self.state.buttons >> Button.DPAD_LEFT & 1)) |
-                bit(6, bool(self.state.buttons >> Button.L & 1)) |
-                bit(7, bool(self.state.buttons >> Button.ZL & 1))
+            bit(0, bool(self.state.buttons >> Button.DPAD_DOWN & 1)) |
+            bit(1, bool(self.state.buttons >> Button.DPAD_UP & 1)) |
+            bit(2, bool(self.state.buttons >> Button.DPAD_RIGHT & 1)) |
+            bit(3, bool(self.state.buttons >> Button.DPAD_LEFT & 1)) |
+            bit(6, bool(self.state.buttons >> Button.L & 1)) |
+            bit(7, bool(self.state.buttons >> Button.ZL & 1))
         )
 
         lx = int(round((1 + self.state.ls.x or 0.0) * 2047.5))

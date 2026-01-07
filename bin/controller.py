@@ -3,9 +3,7 @@ import code
 import click
 
 from ns_controller.client import NsControllerClient
-from ns_controller.client.transport.grpc import NsControllerGrpcTransport
-from ns_controller.client.transport.native import NsControllerNativeTransport
-from ns_controller.client.transport.transport import NsControllerTransport
+from ns_controller.client_transport import *
 from ns_controller.controller import Controller
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
@@ -17,18 +15,19 @@ def cli():
 
 
 @cli.command()
-@click.option("--host", default=DEFAULT_HOST, help="Server host")
-@click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
-def grpc(host: str, port: int) -> None:
-    main(NsControllerGrpcTransport(host, port))
-
-
-@cli.command()
 @click.option("--hid-path", default="/dev/hidg0")
 def native(hid_path: str) -> None:
     controller = Controller()
     controller.connect(hid_path)
     main(NsControllerNativeTransport(controller))
+
+
+@cli.command()
+@click.option("--host", default=DEFAULT_HOST, help="Server host")
+@click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
+def grpc(host: str, port: int) -> None:
+    main(NsControllerGrpcTransport(host, port))
+
 
 def main(transport: NsControllerTransport):
     client = NsControllerClient(transport)
@@ -45,6 +44,7 @@ def main(transport: NsControllerTransport):
         "set_stick": client.set_stick,
         "clear": client.clear,
     })
+
 
 if __name__ == '__main__':
     cli()
