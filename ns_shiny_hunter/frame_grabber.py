@@ -41,7 +41,7 @@ class FrameGrabber:
 
     def start(self):
         if not self.running.is_set():
-            self.running.clear()
+            self.running.set()
             self.video_capture_thread.start()
 
     def stop(self):
@@ -51,7 +51,7 @@ class FrameGrabber:
         self.video_capture.release()
 
     def run(self):
-        while not self.running.is_set():
+        while self.running.is_set():
             success, frame = self.video_capture.read()
             if not success:
                 continue

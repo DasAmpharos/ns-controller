@@ -35,5 +35,5 @@ class NsControllerGrpcTransport(NsControllerTransport):
         self.stub.SetState(state)
 
     def close(self):
-        """Close the gRPC channel."""
-        self.channel.close()
+        pass
+

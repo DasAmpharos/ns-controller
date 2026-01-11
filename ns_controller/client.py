@@ -10,6 +10,12 @@ class NsControllerClient:
         self.state = EnhancedControllerState()
         self.transport = transport
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def press(self, *buttons: Button, send: bool = True, post_delay: float | None = 0.1) -> None:
         """
         Press buttons (adds to currently pressed buttons).
