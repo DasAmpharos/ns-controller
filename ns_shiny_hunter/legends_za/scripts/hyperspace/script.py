@@ -16,7 +16,7 @@ class HyperspaceScript:
                 self.resets += 1
                 print(f"Reset #{self.resets}...")
                 while not HyperspaceReferenceFrames.MAP.matches(self.frame_grabber.frame):
-                    self.controller.click(Button.PLUS, post_delay=0.15)
+                    self.controller.click(Button.PLUS, post_delay=0.2)
                     if HyperspaceReferenceFrames.PROMPT_TO_LEAVE.matches(self.frame_grabber.frame):
                         self.controller.click(Button.B)
                 while HyperspaceReferenceFrames.MAP.matches(self.frame_grabber.frame):

@@ -24,7 +24,7 @@ def cli():
 @click.option("--host", default=DEFAULT_HOST, help="Server host")
 @click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
 @click.option("--source", type=int, default=0, help="Video source index")
-@click.option("--imshow", help="Show video window")
+@click.option("--imshow", is_flag=True, help="Show video window")
 @click.option("--resets", default=0, type=int)
 def grpc(host: str, port: int, source: int, imshow: bool, resets: int) -> None:
     transport = NsControllerGrpcTransport(host, port)
@@ -34,7 +34,7 @@ def grpc(host: str, port: int, source: int, imshow: bool, resets: int) -> None:
 @cli.command()
 @click.option("--hid-path", default="/dev/hidg0")
 @click.option("--source", type=int, default=0, help="Video source index")
-@click.option("--imshow", help="Show video window")
+@click.option("--imshow", is_flag=True, help="Show video window")
 @click.option("--resets", default=0, type=int)
 def native(hid_path: str, source: int, imshow: bool, resets: int) -> None:
     controller = Controller()
@@ -62,7 +62,6 @@ def run(transport: NsControllerTransport, source: int | str, imshow: bool, reset
                     target_dialog=LugiaReferenceFrames.TARGET_DIALOG,
                 ),
                 baseline=lugia.load_baseline(),
-                software_errors=303,
                 resets=resets
             )
 
