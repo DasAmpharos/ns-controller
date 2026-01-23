@@ -13,6 +13,7 @@ from ns_shiny_hunter.bdsp.scripts.ramanas_park.lugia.frames import LugiaReferenc
 from ns_shiny_hunter.bdsp.scripts.ramanas_park.script import RamanasParkScript, ScriptFrames
 from ns_shiny_hunter.frame_grabber import FrameGrabber
 from ns_shiny_hunter.legends_za.scripts.hyperspace.script import HyperspaceScript
+from ns_shiny_hunter.legends_za.scripts.virizion import VirizionScript
 
 
 @click.group()
@@ -46,24 +47,24 @@ def native(hid_path: str, source: int, imshow: bool, resets: int) -> None:
 
 
 def run(transport: NsControllerTransport, source: int | str, imshow: bool, resets: int = 0) -> None:
-    with (NsControllerClient(transport) as controller,
-          FrameGrabber(source, imshow=imshow) as frame_grabber):
+    with (NsControllerClient(transport) as controller):
+          # FrameGrabber(source, imshow=imshow) as frame_grabber):
         try:
             pair_controller(controller)
 
             # BDSP
-            script = RamanasParkScript(
-                controller=controller,
-                frame_grabber=frame_grabber,
-                script_frames=ScriptFrames(
-                    location=LugiaReferenceFrames.LOCATION,
-                    pokemon_in_battle=LugiaReferenceFrames.POKEMON_IN_BATTLE,
-                    target_appeared=LugiaReferenceFrames.TARGET_APPEARED,
-                    target_dialog=LugiaReferenceFrames.TARGET_DIALOG,
-                ),
-                baseline=lugia.load_baseline(),
-                resets=resets
-            )
+            # script = RamanasParkScript(
+            #     controller=controller,
+            #     frame_grabber=frame_grabber,
+            #     script_frames=ScriptFrames(
+            #         location=LugiaReferenceFrames.LOCATION,
+            #         pokemon_in_battle=LugiaReferenceFrames.POKEMON_IN_BATTLE,
+            #         target_appeared=LugiaReferenceFrames.TARGET_APPEARED,
+            #         target_dialog=LugiaReferenceFrames.TARGET_DIALOG,
+            #     ),
+            #     baseline=lugia.load_baseline(),
+            #     resets=resets
+            # )
 
             # Legends ZA
             # script = FlyReset(FlyReset.WILD_ZONE_4, frame_grabber, client, resets=resets)
@@ -74,7 +75,8 @@ def run(transport: NsControllerTransport, source: int | str, imshow: bool, reset
             # script = SoftReset(frame_grabber, client, resets=resets)
             # script = HyperspaceScript(frame_grabber, controller, resets=resets)
             # script = DonutResetScript(frame_grabber, client, targets=['Water', 'All Types'], resets=resets)
-            # script = TerrakionScript(client, resets)
+            # script = TerrakionScript(controller, resets)
+            script = VirizionScript(controller, resets)
             script.run()
         except Exception as e:
             print(f"An error occurred: {e}")
