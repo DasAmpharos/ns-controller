@@ -22,10 +22,10 @@ from ns_controller.state import EnhancedControllerState
 # Matches a standard Pro Controller / Xbox-style USB gamepad.
 # Run `evtest` on the Pi to discover the codes for your specific gamepad.
 DEFAULT_BUTTON_MAP: Final[dict[int, int]] = {
-    ecodes.BTN_SOUTH: 0,  # A
-    ecodes.BTN_EAST: 1,  # B
-    ecodes.BTN_NORTH: 2,  # X
-    ecodes.BTN_WEST: 3,  # Y
+    ecodes.BTN_SOUTH: 1,  # B (bottom) — Switch A/B and X/Y are swapped vs Xbox layout
+    ecodes.BTN_EAST: 0,   # A (right)
+    ecodes.BTN_NORTH: 3,  # Y (top)
+    ecodes.BTN_WEST: 2,   # X (left)
     ecodes.BTN_TL: 4,  # L
     ecodes.BTN_TR: 5,  # R
     ecodes.BTN_TL2: 6,  # ZL
