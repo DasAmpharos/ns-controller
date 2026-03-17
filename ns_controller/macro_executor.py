@@ -84,22 +84,25 @@ class MacroExecutor:
         count = max(action.count, 1)
         down_s = (action.down_ms or 100) / 1000.0
         gap_s = (action.gap_ms or 100) / 1000.0
+        cycle_s = down_s + gap_s
 
+        # Anchor each click to an absolute schedule so timing doesn't drift
+        # across repetitions due to press()/release() call overhead.
+        start = time.monotonic()
         for i in range(count):
             if self.cancel.is_set():
                 return f"click cancelled at rep {i}/{count}"
             self.state.press(*action.buttons)
-            self._sleep(down_s)
+            self._sleep_until(start + i * cycle_s + down_s)
             self.state.release(*action.buttons)
-            if i < count - 1:
-                self._sleep(gap_s)
 
         buttons_str = ", ".join(str(b) for b in action.buttons)
         return f"click [{buttons_str}] x{count}"
 
     def _do_hold(self, action) -> str:
+        press_time = time.monotonic()
         self.state.press(*action.buttons)
-        self._sleep(action.duration_ms / 1000.0)
+        self._sleep_until(press_time + action.duration_ms / 1000.0)
         self.state.release(*action.buttons)
         buttons_str = ", ".join(str(b) for b in action.buttons)
         return f"hold [{buttons_str}] for {action.duration_ms}ms"
