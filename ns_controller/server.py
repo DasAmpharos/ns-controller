@@ -32,6 +32,7 @@ class NsControllerServicerImpl(NsControllerServicer):
     def __init__(self, hid_path: str = DEFAULT_HID_PATH):
         self.state = EnhancedControllerState()
         self.controller = Controller(self.state.proto)
+        self.state.set_notify(self.controller.trigger_report)
         self.controller.connect(hid_path)
 
     def Click(self, request: ClickRequest, context):

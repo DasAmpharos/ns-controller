@@ -5,7 +5,11 @@ from typing import Final
 from loguru import logger
 
 from ns_controller import spi_rom_data
-from ns_controller.pb.ns_controller_pb2 import Button, ControllerState, Position
+from ns_controller.pb.ns_controller_pb2 import Button, ControllerState
+
+# Keepalive interval for HID input reports when no state change has occurred.
+# Real Pro Controller sends at ~8ms over USB.
+_REPORT_KEEPALIVE_S: Final = 0.008
 
 
 class Controller:
@@ -17,6 +21,9 @@ class Controller:
         self.stop_counter: Final = threading.Event()
         self.stop_input = threading.Event()  # Not Final - gets recreated on 0x05
         self.count = 0
+        # Set by trigger_report() to wake the input report thread immediately
+        # on state changes rather than waiting for the keepalive timeout.
+        self._report_trigger = threading.Event()
 
     def connect(self, path: str):
         if self.fp is not None:
@@ -129,11 +136,26 @@ class Controller:
     def start_input_report(self):
         def run_input_report():
             while not self.stop_input.is_set():
-                time.sleep(0.03)  # 30ms
-                self.write(0x30, self.count, self.get_input_buffer())
+                # Wait for a state-change trigger or the keepalive timeout,
+                # whichever comes first. This means a button press reaches
+                # the Switch within OS thread-wakeup latency (~<1ms) instead
+                # of up to 30ms under the old fixed-sleep approach.
+                self._report_trigger.wait(timeout=_REPORT_KEEPALIVE_S)
+                self._report_trigger.clear()
+                if not self.stop_input.is_set():
+                    self.write(0x30, self.count, self.get_input_buffer())
 
         input_report_thread = threading.Thread(target=run_input_report, daemon=True)
         input_report_thread.start()
+
+    def trigger_report(self):
+        """Wake the input report thread immediately to send the current state.
+
+        Called by EnhancedControllerState whenever buttons or sticks change.
+        Safe to call before connect() — the event is simply set and will be
+        consumed when the report thread starts.
+        """
+        self._report_trigger.set()
 
     def uart(self, ack: bool, sub_cmd: int, data: bytes):
         ack_byte = 0x00
