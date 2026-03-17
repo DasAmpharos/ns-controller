@@ -156,19 +156,32 @@ class MacroExecutor:
 
     # -- Timing helpers ----------------------------------------------------------
 
+    # Mirrors EonTimer's timer worker constants:
+    # SPINWAIT_MS threshold below which we switch to a tight spin-wait loop.
+    _SPINWAIT_S: Final = 0.002
+    # Default refreshInterval — max duration of a single coarse sleep iteration.
+    _REFRESH_S: Final = 0.008
+
     def _sleep(self, duration_s: float) -> None:
         self._sleep_until(time.monotonic() + duration_s)
 
     def _sleep_until(self, target: float) -> None:
-        """Sleep until an absolute monotonic time with sub-ms precision."""
-        while True:
+        """Sleep until an absolute monotonic time with sub-ms precision.
+
+        Mirrors EonTimer's timer worker approach:
+        - Coarse sleep of min(remaining - _SPINWAIT_S, _REFRESH_S) while
+          further than _SPINWAIT_S from the target.
+        - Tight spin-wait for the final _SPINWAIT_S window.
+        """
+        while not self.cancel.is_set():
             remaining = target - time.monotonic()
             if remaining <= 0:
                 return
-            if self.cancel.is_set():
+            if remaining > self._SPINWAIT_S:
+                time.sleep(min(remaining - self._SPINWAIT_S, self._REFRESH_S))
+            else:
+                # Tight spin-wait for precision
+                while time.monotonic() < target:
+                    if self.cancel.is_set():
+                        return
                 return
-            if remaining > 0.01:
-                time.sleep(min(remaining - 0.002, 0.05))
-            elif remaining > 0.002:
-                time.sleep(remaining - 0.002)
-            # Busy-wait the final ~2ms for precision
