@@ -143,7 +143,14 @@ class MacroBuilder:
     def __init__(self):
         self._actions: list[MacroAction] = []
 
-    def click(self, *buttons: Button, count: int = 1, down_ms: int = 100, gap_ms: int = 100) -> "MacroBuilder":
+    def click(
+        self,
+        *buttons: Button,
+        count: int = 1,
+        down_ms: int = 100,
+        gap_ms: int = 100,
+        mark: str | None = None,
+    ) -> "MacroBuilder":
         self._actions.append(
             MacroAction(
                 click=ClickAction(
@@ -151,17 +158,19 @@ class MacroBuilder:
                     count=count,
                     down_ms=down_ms,
                     gap_ms=gap_ms,
+                    **({"mark": mark} if mark is not None else {}),
                 )
             )
         )
         return self
 
-    def hold(self, *buttons: Button, duration_ms: int) -> "MacroBuilder":
+    def hold(self, *buttons: Button, duration_ms: int, mark: str | None = None) -> "MacroBuilder":
         self._actions.append(
             MacroAction(
                 hold=HoldAction(
                     buttons=list(buttons),
                     duration_ms=duration_ms,
+                    **({"mark": mark} if mark is not None else {}),
                 )
             )
         )

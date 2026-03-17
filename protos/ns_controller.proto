@@ -79,11 +79,13 @@ message ClickAction {
   uint32 count = 2;            // repeat count (0 or 1 = single click)
   uint32 down_ms = 3;          // hold duration per click (default 100)
   uint32 gap_ms = 4;           // gap between clicks (default 100)
+  optional string mark = 5;   // if set, record a time mark at the first press
 }
 
 message HoldAction {
   repeated Button buttons = 1;
   uint32 duration_ms = 2;      // how long to hold before releasing
+  optional string mark = 3;   // if set, record a time mark at the press
 }
 
 message WaitAction {

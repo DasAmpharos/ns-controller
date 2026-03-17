@@ -105,24 +105,28 @@ class StickRequest(_message.Message):
     def __init__(self, stick: _Optional[_Union[Stick, str]] = ..., position: _Optional[_Union[Position, _Mapping]] = ...) -> None: ...
 
 class ClickAction(_message.Message):
-    __slots__ = ("buttons", "count", "down_ms", "gap_ms")
+    __slots__ = ("buttons", "count", "down_ms", "gap_ms", "mark")
     BUTTONS_FIELD_NUMBER: _ClassVar[int]
     COUNT_FIELD_NUMBER: _ClassVar[int]
     DOWN_MS_FIELD_NUMBER: _ClassVar[int]
     GAP_MS_FIELD_NUMBER: _ClassVar[int]
+    MARK_FIELD_NUMBER: _ClassVar[int]
     buttons: _containers.RepeatedScalarFieldContainer[Button]
     count: int
     down_ms: int
     gap_ms: int
-    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., count: _Optional[int] = ..., down_ms: _Optional[int] = ..., gap_ms: _Optional[int] = ...) -> None: ...
+    mark: str
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., count: _Optional[int] = ..., down_ms: _Optional[int] = ..., gap_ms: _Optional[int] = ..., mark: _Optional[str] = ...) -> None: ...
 
 class HoldAction(_message.Message):
-    __slots__ = ("buttons", "duration_ms")
+    __slots__ = ("buttons", "duration_ms", "mark")
     BUTTONS_FIELD_NUMBER: _ClassVar[int]
     DURATION_MS_FIELD_NUMBER: _ClassVar[int]
+    MARK_FIELD_NUMBER: _ClassVar[int]
     buttons: _containers.RepeatedScalarFieldContainer[Button]
     duration_ms: int
-    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., duration_ms: _Optional[int] = ...) -> None: ...
+    mark: str
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., duration_ms: _Optional[int] = ..., mark: _Optional[str] = ...) -> None: ...
 
 class WaitAction(_message.Message):
     __slots__ = ("duration_ms",)

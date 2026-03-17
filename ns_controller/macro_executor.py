@@ -89,6 +89,8 @@ class MacroExecutor:
         # Anchor each click to an absolute schedule so timing doesn't drift
         # across repetitions due to press()/release() call overhead.
         start = time.monotonic()
+        if action.HasField("mark"):
+            self.marks[action.mark] = start
         for i in range(count):
             if self.cancel.is_set():
                 return f"click cancelled at rep {i}/{count}"
@@ -101,6 +103,8 @@ class MacroExecutor:
 
     def _do_hold(self, action) -> str:
         press_time = time.monotonic()
+        if action.HasField("mark"):
+            self.marks[action.mark] = press_time
         self.state.press(*action.buttons)
         self._sleep_until(press_time + action.duration_ms / 1000.0)
         self.state.release(*action.buttons)
