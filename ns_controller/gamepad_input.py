@@ -94,6 +94,16 @@ class GamepadInput:
         for code, absinfo in caps.get(ecodes.EV_ABS, []):
             self._axis_info[code] = (absinfo.min, absinfo.max)
 
+        # Local stick positions accumulated across axis events in a sync frame.
+        # Flushed directly to state.proto on EV_SYN (without notify) so stick
+        # movement does not flood the report thread with immediate triggers.
+        # Button events (EV_KEY, hat) still go through press()/release() and
+        # do trigger immediate reports — they are discrete and timing-critical.
+        self._ls = Position(x=0.0, y=0.0)
+        self._rs = Position(x=0.0, y=0.0)
+        self._ls_dirty = False
+        self._rs_dirty = False
+
         logger.info(f"GamepadInput initialized: {self.device.name} ({device_path})")
 
     def start(self) -> None:
@@ -105,9 +115,6 @@ class GamepadInput:
         self._thread.join(timeout=2.0)
 
     def _run(self) -> None:
-        # Local shadow of stick positions so we can merge into EnhancedControllerState
-        ls = Position(x=0.0, y=0.0)
-        rs = Position(x=0.0, y=0.0)
         try:
             for event in self.device.read_loop():
                 if self._stop.is_set():
@@ -116,15 +123,27 @@ class GamepadInput:
                 if event.type == ecodes.EV_KEY:
                     self._handle_button(event.code, event.value)
                 elif event.type == ecodes.EV_ABS:
-                    self._handle_axis(ls, rs, event.code, event.value)
+                    self._handle_axis(event.code, event.value)
                 elif event.type == ecodes.EV_SYN:
-                    # Push accumulated stick state on sync
-                    self.state.set_stick(Stick.LS, ls)
-                    self.state.set_stick(Stick.RS, rs)
+                    self._flush_sticks()
         except OSError as e:
             logger.error(f"Gamepad disconnected: {e}")
         except Exception as e:
             logger.exception(f"GamepadInput thread crashed: {e}")
+
+    def _flush_sticks(self) -> None:
+        """Write accumulated stick positions directly to proto without notify.
+
+        Stick movement is continuous; the 8ms HID keepalive is sufficient to
+        deliver updated stick state. Bypassing notify prevents a trigger_report()
+        call (and thus an immediate HID send) on every EV_SYN event.
+        """
+        if self._ls_dirty:
+            self.state.proto.ls.CopyFrom(self._ls)
+            self._ls_dirty = False
+        if self._rs_dirty:
+            self.state.proto.rs.CopyFrom(self._rs)
+            self._rs_dirty = False
 
     def _handle_button(self, code: int, value: int) -> None:
         bit = self.button_map.get(code)
@@ -135,8 +154,9 @@ class GamepadInput:
         else:
             self.state.release(bit)
 
-    def _handle_axis(self, ls: Position, rs: Position, code: int, value: int) -> None:
+    def _handle_axis(self, code: int, value: int) -> None:
         if code in self.hat_map:
+            # Hat events are discrete (button-like) — trigger immediate report.
             neg_bit, pos_bit = self.hat_map[code]
             self.state.release(neg_bit, pos_bit)
             if value < 0:
@@ -155,11 +175,16 @@ class GamepadInput:
         if axis == "y":
             normalized = -normalized
 
-        pos = ls if stick_enum == Stick.LS else rs
+        pos = self._ls if stick_enum == Stick.LS else self._rs
         if axis == "x":
             pos.x = normalized
         else:
             pos.y = normalized
+
+        if stick_enum == Stick.LS:
+            self._ls_dirty = True
+        else:
+            self._rs_dirty = True
 
     def _normalize_axis(self, code: int, value: int) -> float:
         info = self._axis_info.get(code)
