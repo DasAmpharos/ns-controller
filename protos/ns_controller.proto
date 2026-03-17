@@ -72,6 +72,69 @@ message StickRequest {
   Position position = 2;
 }
 
+// --- Macro actions ---
+
+message ClickAction {
+  repeated Button buttons = 1;
+  uint32 count = 2;            // repeat count (0 or 1 = single click)
+  uint32 down_ms = 3;          // hold duration per click (default 100)
+  uint32 gap_ms = 4;           // gap between clicks (default 100)
+}
+
+message HoldAction {
+  repeated Button buttons = 1;
+  uint32 duration_ms = 2;      // how long to hold before releasing
+}
+
+message WaitAction {
+  uint32 duration_ms = 1;      // relative wait from now
+}
+
+message SpamAction {
+  repeated Button buttons = 1;
+  uint32 duration_ms = 2;      // total spam duration
+  uint32 interval_ms = 3;      // click cycle interval (default 100)
+}
+
+message SetMarkAction {
+  string name = 1;             // name of the time anchor
+}
+
+message WaitUntilAction {
+  string mark = 1;             // reference mark name
+  uint32 offset_ms = 2;        // wait until marks[name] + offset
+}
+
+message SetStickAction {
+  Stick stick = 1;
+  Position position = 2;
+  uint32 duration_ms = 3;      // 0 = set and continue (no auto-release)
+}
+
+message MacroAction {
+  oneof action {
+    ClickAction click = 1;
+    HoldAction hold = 2;
+    WaitAction wait = 3;
+    SpamAction spam = 4;
+    SetMarkAction set_mark = 5;
+    WaitUntilAction wait_until = 6;
+    SetStickAction set_stick = 7;
+  }
+}
+
+message Macro {
+  repeated MacroAction actions = 1;
+}
+
+message MacroEvent {
+  uint32 action_index = 1;     // which action (0-based)
+  string description = 2;      // human-readable summary
+  bool completed = 3;          // true when entire macro is done
+  bool error = 4;
+  string error_message = 5;
+}
+
 service NsController {
   rpc Click(ClickRequest) returns (ControllerState);
   rpc Press(PressRequest) returns (ControllerState);
@@ -80,4 +143,8 @@ service NsController {
   rpc SetState(ControllerState) returns (ControllerState);
   rpc GetState(google.protobuf.Empty) returns (ControllerState);
   rpc Clear(google.protobuf.Empty) returns (ControllerState);
+
+  // Execute a macro on the server with monotonic clock timing.
+  // Streams progress events back; cancel the stream to abort.
+  rpc RunMacro(Macro) returns (stream MacroEvent);
 }

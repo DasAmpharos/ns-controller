@@ -103,3 +103,101 @@ class StickRequest(_message.Message):
     stick: Stick
     position: Position
     def __init__(self, stick: _Optional[_Union[Stick, str]] = ..., position: _Optional[_Union[Position, _Mapping]] = ...) -> None: ...
+
+class ClickAction(_message.Message):
+    __slots__ = ("buttons", "count", "down_ms", "gap_ms")
+    BUTTONS_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    DOWN_MS_FIELD_NUMBER: _ClassVar[int]
+    GAP_MS_FIELD_NUMBER: _ClassVar[int]
+    buttons: _containers.RepeatedScalarFieldContainer[Button]
+    count: int
+    down_ms: int
+    gap_ms: int
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., count: _Optional[int] = ..., down_ms: _Optional[int] = ..., gap_ms: _Optional[int] = ...) -> None: ...
+
+class HoldAction(_message.Message):
+    __slots__ = ("buttons", "duration_ms")
+    BUTTONS_FIELD_NUMBER: _ClassVar[int]
+    DURATION_MS_FIELD_NUMBER: _ClassVar[int]
+    buttons: _containers.RepeatedScalarFieldContainer[Button]
+    duration_ms: int
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., duration_ms: _Optional[int] = ...) -> None: ...
+
+class WaitAction(_message.Message):
+    __slots__ = ("duration_ms",)
+    DURATION_MS_FIELD_NUMBER: _ClassVar[int]
+    duration_ms: int
+    def __init__(self, duration_ms: _Optional[int] = ...) -> None: ...
+
+class SpamAction(_message.Message):
+    __slots__ = ("buttons", "duration_ms", "interval_ms")
+    BUTTONS_FIELD_NUMBER: _ClassVar[int]
+    DURATION_MS_FIELD_NUMBER: _ClassVar[int]
+    INTERVAL_MS_FIELD_NUMBER: _ClassVar[int]
+    buttons: _containers.RepeatedScalarFieldContainer[Button]
+    duration_ms: int
+    interval_ms: int
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., duration_ms: _Optional[int] = ..., interval_ms: _Optional[int] = ...) -> None: ...
+
+class SetMarkAction(_message.Message):
+    __slots__ = ("name",)
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
+
+class WaitUntilAction(_message.Message):
+    __slots__ = ("mark", "offset_ms")
+    MARK_FIELD_NUMBER: _ClassVar[int]
+    OFFSET_MS_FIELD_NUMBER: _ClassVar[int]
+    mark: str
+    offset_ms: int
+    def __init__(self, mark: _Optional[str] = ..., offset_ms: _Optional[int] = ...) -> None: ...
+
+class SetStickAction(_message.Message):
+    __slots__ = ("stick", "position", "duration_ms")
+    STICK_FIELD_NUMBER: _ClassVar[int]
+    POSITION_FIELD_NUMBER: _ClassVar[int]
+    DURATION_MS_FIELD_NUMBER: _ClassVar[int]
+    stick: Stick
+    position: Position
+    duration_ms: int
+    def __init__(self, stick: _Optional[_Union[Stick, str]] = ..., position: _Optional[_Union[Position, _Mapping]] = ..., duration_ms: _Optional[int] = ...) -> None: ...
+
+class MacroAction(_message.Message):
+    __slots__ = ("click", "hold", "wait", "spam", "set_mark", "wait_until", "set_stick")
+    CLICK_FIELD_NUMBER: _ClassVar[int]
+    HOLD_FIELD_NUMBER: _ClassVar[int]
+    WAIT_FIELD_NUMBER: _ClassVar[int]
+    SPAM_FIELD_NUMBER: _ClassVar[int]
+    SET_MARK_FIELD_NUMBER: _ClassVar[int]
+    WAIT_UNTIL_FIELD_NUMBER: _ClassVar[int]
+    SET_STICK_FIELD_NUMBER: _ClassVar[int]
+    click: ClickAction
+    hold: HoldAction
+    wait: WaitAction
+    spam: SpamAction
+    set_mark: SetMarkAction
+    wait_until: WaitUntilAction
+    set_stick: SetStickAction
+    def __init__(self, click: _Optional[_Union[ClickAction, _Mapping]] = ..., hold: _Optional[_Union[HoldAction, _Mapping]] = ..., wait: _Optional[_Union[WaitAction, _Mapping]] = ..., spam: _Optional[_Union[SpamAction, _Mapping]] = ..., set_mark: _Optional[_Union[SetMarkAction, _Mapping]] = ..., wait_until: _Optional[_Union[WaitUntilAction, _Mapping]] = ..., set_stick: _Optional[_Union[SetStickAction, _Mapping]] = ...) -> None: ...
+
+class Macro(_message.Message):
+    __slots__ = ("actions",)
+    ACTIONS_FIELD_NUMBER: _ClassVar[int]
+    actions: _containers.RepeatedCompositeFieldContainer[MacroAction]
+    def __init__(self, actions: _Optional[_Iterable[_Union[MacroAction, _Mapping]]] = ...) -> None: ...
+
+class MacroEvent(_message.Message):
+    __slots__ = ("action_index", "description", "completed", "error", "error_message")
+    ACTION_INDEX_FIELD_NUMBER: _ClassVar[int]
+    DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
+    COMPLETED_FIELD_NUMBER: _ClassVar[int]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ERROR_MESSAGE_FIELD_NUMBER: _ClassVar[int]
+    action_index: int
+    description: str
+    completed: bool
+    error: bool
+    error_message: str
+    def __init__(self, action_index: _Optional[int] = ..., description: _Optional[str] = ..., completed: bool = ..., error: bool = ..., error_message: _Optional[str] = ...) -> None: ...

@@ -1,7 +1,24 @@
 import time
+from collections.abc import Generator
+
+from ns_controller.pb.ns_controller_pb2 import (
+    Button,
+    ClickAction,
+    ControllerState,
+    HoldAction,
+    Macro,
+    MacroAction,
+    MacroEvent,
+    Position,
+    SetMarkAction,
+    SetStickAction,
+    SpamAction,
+    Stick,
+    WaitAction,
+    WaitUntilAction,
+)
 
 from .client_transport import NsControllerTransport
-from ns_controller.pb.ns_controller_pb2 import ControllerState, Button, Position, Stick
 from .state import EnhancedControllerState
 
 
@@ -97,3 +114,107 @@ class NsControllerClient:
 
     def close(self):
         self.transport.close()
+
+    def run_macro(self, macro: Macro) -> Generator[MacroEvent, None, None]:
+        """Send a macro to the server and stream back progress events.
+
+        Cancel by closing the generator. The server runs with monotonic clock
+        timing and streams a MacroEvent per action.
+        """
+        yield from self.transport.run_macro(macro)
+
+
+class MacroBuilder:
+    """Fluent builder for constructing Macro protobuf messages.
+
+    Example::
+
+        macro = (MacroBuilder()
+            .click(Button.A)
+            .wait(20855)
+            .mark("hold_start")
+            .hold(Button.A, duration_ms=3000)
+            .wait_until("hold_start", offset_ms=20645)
+            .spam(Button.B, duration_ms=3000)
+            .click(Button.A, count=3)
+            .build())
+    """
+
+    def __init__(self):
+        self._actions: list[MacroAction] = []
+
+    def click(self, *buttons: Button, count: int = 1, down_ms: int = 100, gap_ms: int = 100) -> "MacroBuilder":
+        self._actions.append(
+            MacroAction(
+                click=ClickAction(
+                    buttons=list(buttons),
+                    count=count,
+                    down_ms=down_ms,
+                    gap_ms=gap_ms,
+                )
+            )
+        )
+        return self
+
+    def hold(self, *buttons: Button, duration_ms: int) -> "MacroBuilder":
+        self._actions.append(
+            MacroAction(
+                hold=HoldAction(
+                    buttons=list(buttons),
+                    duration_ms=duration_ms,
+                )
+            )
+        )
+        return self
+
+    def wait(self, duration_ms: int) -> "MacroBuilder":
+        self._actions.append(MacroAction(wait=WaitAction(duration_ms=duration_ms)))
+        return self
+
+    def spam(self, *buttons: Button, duration_ms: int, interval_ms: int = 100) -> "MacroBuilder":
+        self._actions.append(
+            MacroAction(
+                spam=SpamAction(
+                    buttons=list(buttons),
+                    duration_ms=duration_ms,
+                    interval_ms=interval_ms,
+                )
+            )
+        )
+        return self
+
+    def mark(self, name: str) -> "MacroBuilder":
+        self._actions.append(MacroAction(set_mark=SetMarkAction(name=name)))
+        return self
+
+    def wait_until(self, mark: str, offset_ms: int) -> "MacroBuilder":
+        self._actions.append(
+            MacroAction(
+                wait_until=WaitUntilAction(
+                    mark=mark,
+                    offset_ms=offset_ms,
+                )
+            )
+        )
+        return self
+
+    def set_stick(
+        self,
+        stick: Stick,
+        x: float = 0.0,
+        y: float = 0.0,
+        duration_ms: int = 0,
+    ) -> "MacroBuilder":
+        self._actions.append(
+            MacroAction(
+                set_stick=SetStickAction(
+                    stick=stick,
+                    position=Position(x=x, y=y),
+                    duration_ms=duration_ms,
+                )
+            )
+        )
+        return self
+
+    def build(self) -> Macro:
+        return Macro(actions=self._actions)

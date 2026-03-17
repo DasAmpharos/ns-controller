@@ -70,6 +70,11 @@ class NsControllerStub(object):
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=ns__controller__pb2.ControllerState.FromString,
                 _registered_method=True)
+        self.RunMacro = channel.unary_stream(
+                '/ns_controller.pb.NsController/RunMacro',
+                request_serializer=ns__controller__pb2.Macro.SerializeToString,
+                response_deserializer=ns__controller__pb2.MacroEvent.FromString,
+                _registered_method=True)
 
 
 class NsControllerServicer(object):
@@ -117,6 +122,14 @@ class NsControllerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RunMacro(self, request, context):
+        """Execute a macro on the server with monotonic clock timing.
+        Streams progress events back; cancel the stream to abort.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_NsControllerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -154,6 +167,11 @@ def add_NsControllerServicer_to_server(servicer, server):
                     servicer.Clear,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=ns__controller__pb2.ControllerState.SerializeToString,
+            ),
+            'RunMacro': grpc.unary_stream_rpc_method_handler(
+                    servicer.RunMacro,
+                    request_deserializer=ns__controller__pb2.Macro.FromString,
+                    response_serializer=ns__controller__pb2.MacroEvent.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -345,6 +363,33 @@ class NsController(object):
             '/ns_controller.pb.NsController/Clear',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ns__controller__pb2.ControllerState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RunMacro(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/ns_controller.pb.NsController/RunMacro',
+            ns__controller__pb2.Macro.SerializeToString,
+            ns__controller__pb2.MacroEvent.FromString,
             options,
             channel_credentials,
             insecure,

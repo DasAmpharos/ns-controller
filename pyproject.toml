@@ -17,6 +17,7 @@ pytesseract = "^0.3.13"
 inquirerpy = "^0.3.4"
 pillow = "^11.0.0"
 types-protobuf = "^6.32.1.20251210"
+evdev = "^1.9.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.2"
