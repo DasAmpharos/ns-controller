@@ -18,6 +18,8 @@ except ImportError as _exc:
 from ns_controller.pb.ns_controller_pb2 import Position, Stick
 from ns_controller.state import EnhancedControllerState
 
+DEFAULT_STICK_DEADZONE: Final[float] = 0.05
+
 # Default mapping: evdev button code -> Button bit position.
 # Matches a standard Pro Controller / Xbox-style USB gamepad.
 # Run `evtest` on the Pi to discover the codes for your specific gamepad.
@@ -73,6 +75,7 @@ class GamepadInput:
         button_map: dict[int, int] | None = None,
         axis_map: dict[int, tuple[Stick, str]] | None = None,
         hat_map: dict[int, tuple[int, int]] | None = None,
+        stick_deadzone: float = DEFAULT_STICK_DEADZONE,
     ):
         if device_path is None:
             device_path = find_gamepad()
@@ -84,6 +87,7 @@ class GamepadInput:
         self.button_map: Final = button_map or DEFAULT_BUTTON_MAP
         self.axis_map: Final = axis_map or DEFAULT_AXIS_MAP
         self.hat_map: Final = hat_map or DEFAULT_HAT_MAP
+        self.stick_deadzone: Final = stick_deadzone
 
         self._stop: Final = threading.Event()
         self._thread: Final = threading.Thread(target=self._run, daemon=True)
@@ -175,7 +179,15 @@ class GamepadInput:
         if axis == "y":
             normalized = -normalized
 
+        # Apply center deadzone — snaps small values to 0.0 to suppress noise
+        if abs(normalized) < self.stick_deadzone:
+            normalized = 0.0
+
         pos = self._ls if stick_enum == Stick.LS else self._rs
+        old = pos.x if axis == "x" else pos.y
+        if normalized == old:
+            return
+
         if axis == "x":
             pos.x = normalized
         else:
