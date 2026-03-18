@@ -1,6 +1,5 @@
 import threading
 import time
-from collections.abc import Generator
 from typing import Final
 
 from loguru import logger
@@ -8,7 +7,6 @@ from loguru import logger
 from ns_controller.pb.ns_controller_pb2 import (
     Macro,
     MacroAction,
-    MacroEvent,
     Position,
     Stick,
 )
@@ -31,58 +29,40 @@ class MacroExecutor:
         self.cancel: Final = cancel
         self.marks: dict[str, float] = {}
 
-    def execute(self) -> Generator[MacroEvent, None, None]:
-        """Iterate through macro actions, yielding a MacroEvent for each."""
-        for i, action in enumerate(self.macro.actions):
+    def execute(self) -> None:
+        for action in self.macro.actions:
             if self.cancel.is_set():
-                yield MacroEvent(action_index=i, description="Macro cancelled", completed=True)
                 return
-
             try:
-                desc = self._execute_action(action)
-                yield MacroEvent(action_index=i, description=desc)
+                self._execute_action(action)
             except Exception as e:
-                logger.exception(f"Macro action {i} failed: {e}")
-                yield MacroEvent(
-                    action_index=i,
-                    description=str(e),
-                    error=True,
-                    error_message=str(e),
-                    completed=True,
-                )
+                logger.exception(f"Macro action failed: {e}")
                 return
 
-        yield MacroEvent(
-            action_index=len(self.macro.actions),
-            description="Macro completed",
-            completed=True,
-        )
-
-    def _execute_action(self, action: MacroAction) -> str:
-        which = action.WhichOneof("action")
-        match which:
+    def _execute_action(self, action: MacroAction) -> None:
+        match action.WhichOneof("action"):
             case "click":
-                return self._do_click(action.click)
+                self._do_click(action.click)
             case "repeat_click":
-                return self._do_repeat_click(action.repeat_click)
+                self._do_repeat_click(action.repeat_click)
             case "hold":
-                return self._do_hold(action.hold)
+                self._do_hold(action.hold)
             case "wait":
-                return self._do_wait(action.wait)
+                self._do_wait(action.wait)
             case "spam":
-                return self._do_spam(action.spam)
+                self._do_spam(action.spam)
             case "set_mark":
-                return self._do_set_mark(action.set_mark)
+                self._do_set_mark(action.set_mark)
             case "wait_until":
-                return self._do_wait_until(action.wait_until)
+                self._do_wait_until(action.wait_until)
             case "set_stick":
-                return self._do_set_stick(action.set_stick)
-            case _:
+                self._do_set_stick(action.set_stick)
+            case which:
                 raise ValueError(f"Unknown action type: {which}")
 
     # -- Action implementations --------------------------------------------------
 
-    def _do_click(self, action) -> str:
+    def _do_click(self, action) -> None:
         down_s = (action.down_ms or 100) / 1000.0
         start = time.monotonic()
         if action.HasField("mark"):
@@ -90,10 +70,8 @@ class MacroExecutor:
         self.state.press(*action.buttons)
         self._sleep_until(start + down_s)
         self.state.release(*action.buttons)
-        buttons_str = ", ".join(str(b) for b in action.buttons)
-        return f"click [{buttons_str}]"
 
-    def _do_repeat_click(self, action) -> str:
+    def _do_repeat_click(self, action) -> None:
         count = max(action.count, 1)
         down_s = (action.down_ms or 100) / 1000.0
         gap_s = (action.gap_ms or 100) / 1000.0
@@ -104,72 +82,53 @@ class MacroExecutor:
             self.marks[action.mark] = start
         for i in range(count):
             if self.cancel.is_set():
-                return f"repeat_click cancelled at rep {i}/{count}"
+                return
             self.state.press(*action.buttons)
             self._sleep_until(start + i * cycle_s + down_s)
             self.state.release(*action.buttons)
             if i < count - 1:
                 self._sleep_until(start + i * cycle_s + cycle_s)
 
-        buttons_str = ", ".join(str(b) for b in action.buttons)
-        return f"repeat_click [{buttons_str}] x{count}"
-
-    def _do_hold(self, action) -> str:
+    def _do_hold(self, action) -> None:
         press_time = time.monotonic()
         if action.HasField("mark"):
             self.marks[action.mark] = press_time
         self.state.press(*action.buttons)
         self._sleep_until(press_time + action.duration_ms / 1000.0)
         self.state.release(*action.buttons)
-        buttons_str = ", ".join(str(b) for b in action.buttons)
-        return f"hold [{buttons_str}] for {action.duration_ms}ms"
 
-    def _do_wait(self, action) -> str:
+    def _do_wait(self, action) -> None:
         self._sleep(action.duration_ms / 1000.0)
-        return f"wait {action.duration_ms}ms"
 
-    def _do_spam(self, action) -> str:
+    def _do_spam(self, action) -> None:
         interval_s = (action.interval_ms or 100) / 1000.0
         down_s = interval_s * 0.4
         up_s = interval_s * 0.6
         end_time = time.monotonic() + (action.duration_ms / 1000.0)
-        clicks = 0
 
         while time.monotonic() < end_time:
             if self.cancel.is_set():
                 self.state.release(*action.buttons)
-                return f"spam cancelled after {clicks} clicks"
+                return
             self.state.press(*action.buttons)
             self._sleep(down_s)
             self.state.release(*action.buttons)
             self._sleep(up_s)
-            clicks += 1
 
-        buttons_str = ", ".join(str(b) for b in action.buttons)
-        return f"spam [{buttons_str}] for {action.duration_ms}ms ({clicks} clicks)"
-
-    def _do_set_mark(self, action) -> str:
+    def _do_set_mark(self, action) -> None:
         self.marks[action.name] = time.monotonic()
-        return f"mark '{action.name}'"
 
-    def _do_wait_until(self, action) -> str:
+    def _do_wait_until(self, action) -> None:
         mark_time = self.marks.get(action.mark)
         if mark_time is None:
             raise ValueError(f"Unknown mark: '{action.mark}'")
-        target = mark_time + (action.offset_ms / 1000.0)
-        self._sleep_until(target)
-        return f"wait_until '{action.mark}' + {action.offset_ms}ms"
+        self._sleep_until(mark_time + (action.offset_ms / 1000.0))
 
-    def _do_set_stick(self, action) -> str:
+    def _do_set_stick(self, action) -> None:
         self.state.set_stick(action.stick, action.position)
-
         if action.duration_ms > 0:
             self._sleep(action.duration_ms / 1000.0)
             self.state.set_stick(action.stick, Position(x=0.0, y=0.0))
-
-        stick_name = "ls" if action.stick == Stick.LS else "rs"
-        dur_desc = f" for {action.duration_ms}ms" if action.duration_ms > 0 else ""
-        return f"set_stick {stick_name}=({action.position.x:.2f},{action.position.y:.2f}){dur_desc}"
 
     # -- Timing helpers ----------------------------------------------------------
 
@@ -197,7 +156,6 @@ class MacroExecutor:
             if remaining > self._SPINWAIT_S:
                 time.sleep(min(remaining - self._SPINWAIT_S, self._REFRESH_S))
             else:
-                # Tight spin-wait for precision
                 while time.monotonic() < target:
                     if self.cancel.is_set():
                         return

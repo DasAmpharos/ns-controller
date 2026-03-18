@@ -61,8 +61,7 @@ class NsControllerServicerImpl(NsControllerServicer):
         context.add_callback(cancel.set)
 
         def run_executor():
-            for event in MacroExecutor(request, self.state, cancel).execute():
-                logger.info(f"[macro] action={event.action_index} {event.description}")
+            MacroExecutor(request, self.state, cancel).execute()
 
         logger.info(f"Starting macro with {len(request.actions)} actions")
         thread = threading.Thread(target=run_executor, daemon=True)
