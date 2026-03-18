@@ -63,6 +63,8 @@ class MacroExecutor:
         match which:
             case "click":
                 return self._do_click(action.click)
+            case "repeat_click":
+                return self._do_repeat_click(action.repeat_click)
             case "hold":
                 return self._do_hold(action.hold)
             case "wait":
@@ -81,25 +83,36 @@ class MacroExecutor:
     # -- Action implementations --------------------------------------------------
 
     def _do_click(self, action) -> str:
+        down_s = (action.down_ms or 100) / 1000.0
+        start = time.monotonic()
+        if action.HasField("mark"):
+            self.marks[action.mark] = start
+        self.state.press(*action.buttons)
+        self._sleep_until(start + down_s)
+        self.state.release(*action.buttons)
+        buttons_str = ", ".join(str(b) for b in action.buttons)
+        return f"click [{buttons_str}]"
+
+    def _do_repeat_click(self, action) -> str:
         count = max(action.count, 1)
         down_s = (action.down_ms or 100) / 1000.0
         gap_s = (action.gap_ms or 100) / 1000.0
         cycle_s = down_s + gap_s
 
-        # Anchor each click to an absolute schedule so timing doesn't drift
-        # across repetitions due to press()/release() call overhead.
         start = time.monotonic()
         if action.HasField("mark"):
             self.marks[action.mark] = start
         for i in range(count):
             if self.cancel.is_set():
-                return f"click cancelled at rep {i}/{count}"
+                return f"repeat_click cancelled at rep {i}/{count}"
             self.state.press(*action.buttons)
             self._sleep_until(start + i * cycle_s + down_s)
             self.state.release(*action.buttons)
+            if i < count - 1:
+                self._sleep_until(start + i * cycle_s + cycle_s)
 
         buttons_str = ", ".join(str(b) for b in action.buttons)
-        return f"click [{buttons_str}] x{count}"
+        return f"repeat_click [{buttons_str}] x{count}"
 
     def _do_hold(self, action) -> str:
         press_time = time.monotonic()

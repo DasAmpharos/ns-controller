@@ -10,6 +10,7 @@ from ns_controller.pb.ns_controller_pb2 import (
     MacroAction,
     MacroEvent,
     Position,
+    RepeatClickAction,
     SetMarkAction,
     SetStickAction,
     SpamAction,
@@ -146,14 +147,31 @@ class MacroBuilder:
     def click(
         self,
         *buttons: Button,
-        count: int = 1,
+        down_ms: int = 100,
+        mark: str | None = None,
+    ) -> "MacroBuilder":
+        self._actions.append(
+            MacroAction(
+                click=ClickAction(
+                    buttons=list(buttons),
+                    down_ms=down_ms,
+                    **({"mark": mark} if mark is not None else {}),
+                )
+            )
+        )
+        return self
+
+    def repeat_click(
+        self,
+        *buttons: Button,
+        count: int,
         down_ms: int = 100,
         gap_ms: int = 100,
         mark: str | None = None,
     ) -> "MacroBuilder":
         self._actions.append(
             MacroAction(
-                click=ClickAction(
+                repeat_click=RepeatClickAction(
                     buttons=list(buttons),
                     count=count,
                     down_ms=down_ms,

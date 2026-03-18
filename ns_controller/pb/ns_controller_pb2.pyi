@@ -105,6 +105,18 @@ class StickRequest(_message.Message):
     def __init__(self, stick: _Optional[_Union[Stick, str]] = ..., position: _Optional[_Union[Position, _Mapping]] = ...) -> None: ...
 
 class ClickAction(_message.Message):
+    __slots__ = ("buttons", "down_ms", "gap_ms", "mark")
+    BUTTONS_FIELD_NUMBER: _ClassVar[int]
+    DOWN_MS_FIELD_NUMBER: _ClassVar[int]
+    GAP_MS_FIELD_NUMBER: _ClassVar[int]
+    MARK_FIELD_NUMBER: _ClassVar[int]
+    buttons: _containers.RepeatedScalarFieldContainer[Button]
+    down_ms: int
+    gap_ms: int
+    mark: str
+    def __init__(self, buttons: _Optional[_Iterable[_Union[Button, str]]] = ..., down_ms: _Optional[int] = ..., gap_ms: _Optional[int] = ..., mark: _Optional[str] = ...) -> None: ...
+
+class RepeatClickAction(_message.Message):
     __slots__ = ("buttons", "count", "down_ms", "gap_ms", "mark")
     BUTTONS_FIELD_NUMBER: _ClassVar[int]
     COUNT_FIELD_NUMBER: _ClassVar[int]
@@ -169,7 +181,7 @@ class SetStickAction(_message.Message):
     def __init__(self, stick: _Optional[_Union[Stick, str]] = ..., position: _Optional[_Union[Position, _Mapping]] = ..., duration_ms: _Optional[int] = ...) -> None: ...
 
 class MacroAction(_message.Message):
-    __slots__ = ("click", "hold", "wait", "spam", "set_mark", "wait_until", "set_stick")
+    __slots__ = ("click", "hold", "wait", "spam", "set_mark", "wait_until", "set_stick", "repeat_click")
     CLICK_FIELD_NUMBER: _ClassVar[int]
     HOLD_FIELD_NUMBER: _ClassVar[int]
     WAIT_FIELD_NUMBER: _ClassVar[int]
@@ -177,6 +189,7 @@ class MacroAction(_message.Message):
     SET_MARK_FIELD_NUMBER: _ClassVar[int]
     WAIT_UNTIL_FIELD_NUMBER: _ClassVar[int]
     SET_STICK_FIELD_NUMBER: _ClassVar[int]
+    REPEAT_CLICK_FIELD_NUMBER: _ClassVar[int]
     click: ClickAction
     hold: HoldAction
     wait: WaitAction
@@ -184,7 +197,8 @@ class MacroAction(_message.Message):
     set_mark: SetMarkAction
     wait_until: WaitUntilAction
     set_stick: SetStickAction
-    def __init__(self, click: _Optional[_Union[ClickAction, _Mapping]] = ..., hold: _Optional[_Union[HoldAction, _Mapping]] = ..., wait: _Optional[_Union[WaitAction, _Mapping]] = ..., spam: _Optional[_Union[SpamAction, _Mapping]] = ..., set_mark: _Optional[_Union[SetMarkAction, _Mapping]] = ..., wait_until: _Optional[_Union[WaitUntilAction, _Mapping]] = ..., set_stick: _Optional[_Union[SetStickAction, _Mapping]] = ...) -> None: ...
+    repeat_click: RepeatClickAction
+    def __init__(self, click: _Optional[_Union[ClickAction, _Mapping]] = ..., hold: _Optional[_Union[HoldAction, _Mapping]] = ..., wait: _Optional[_Union[WaitAction, _Mapping]] = ..., spam: _Optional[_Union[SpamAction, _Mapping]] = ..., set_mark: _Optional[_Union[SetMarkAction, _Mapping]] = ..., wait_until: _Optional[_Union[WaitUntilAction, _Mapping]] = ..., set_stick: _Optional[_Union[SetStickAction, _Mapping]] = ..., repeat_click: _Optional[_Union[RepeatClickAction, _Mapping]] = ...) -> None: ...
 
 class Macro(_message.Message):
     __slots__ = ("actions",)

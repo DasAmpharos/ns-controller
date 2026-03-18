@@ -25,17 +25,17 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ns_controller.proto\x12\x10ns_controller.pb\x1a\x1bgoogle/protobuf/empty.proto\" \n\x08Position\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"r\n\x0f\x43ontrollerState\x12\x0f\n\x07\x62uttons\x18\x01 \x01(\x04\x12&\n\x02ls\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position\x12&\n\x02rs\x18\x03 \x01(\x0b\x32\x1a.ns_controller.pb.Position\"K\n\x0c\x43lickRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x10\n\x08\x64uration\x18\x02 \x01(\x02\"9\n\x0cPressRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\";\n\x0eReleaseRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\"d\n\x0cStickRequest\x12&\n\x05stick\x18\x01 \x01(\x0e\x32\x17.ns_controller.pb.Stick\x12,\n\x08position\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position\"\x84\x01\n\x0b\x43lickAction\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\r\n\x05\x63ount\x18\x02 \x01(\r\x12\x0f\n\x07\x64own_ms\x18\x03 \x01(\r\x12\x0e\n\x06gap_ms\x18\x04 \x01(\r\x12\x11\n\x04mark\x18\x05 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_mark\"h\n\nHoldAction\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x13\n\x0b\x64uration_ms\x18\x02 \x01(\r\x12\x11\n\x04mark\x18\x03 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_mark\"!\n\nWaitAction\x12\x13\n\x0b\x64uration_ms\x18\x01 \x01(\r\"a\n\nSpamAction\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x13\n\x0b\x64uration_ms\x18\x02 \x01(\r\x12\x13\n\x0binterval_ms\x18\x03 \x01(\r\"\x1d\n\rSetMarkAction\x12\x0c\n\x04name\x18\x01 \x01(\t\"2\n\x0fWaitUntilAction\x12\x0c\n\x04mark\x18\x01 \x01(\t\x12\x11\n\toffset_ms\x18\x02 \x01(\r\"{\n\x0eSetStickAction\x12&\n\x05stick\x18\x01 \x01(\x0e\x32\x17.ns_controller.pb.Stick\x12,\n\x08position\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position\x12\x13\n\x0b\x64uration_ms\x18\x03 \x01(\r\"\xf6\x02\n\x0bMacroAction\x12.\n\x05\x63lick\x18\x01 \x01(\x0b\x32\x1d.ns_controller.pb.ClickActionH\x00\x12,\n\x04hold\x18\x02 \x01(\x0b\x32\x1c.ns_controller.pb.HoldActionH\x00\x12,\n\x04wait\x18\x03 \x01(\x0b\x32\x1c.ns_controller.pb.WaitActionH\x00\x12,\n\x04spam\x18\x04 \x01(\x0b\x32\x1c.ns_controller.pb.SpamActionH\x00\x12\x33\n\x08set_mark\x18\x05 \x01(\x0b\x32\x1f.ns_controller.pb.SetMarkActionH\x00\x12\x37\n\nwait_until\x18\x06 \x01(\x0b\x32!.ns_controller.pb.WaitUntilActionH\x00\x12\x35\n\tset_stick\x18\x07 \x01(\x0b\x32 .ns_controller.pb.SetStickActionH\x00\x42\x08\n\x06\x61\x63tion\"7\n\x05Macro\x12.\n\x07\x61\x63tions\x18\x01 \x03(\x0b\x32\x1d.ns_controller.pb.MacroAction\"p\n\nMacroEvent\x12\x14\n\x0c\x61\x63tion_index\x18\x01 \x01(\r\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x11\n\tcompleted\x18\x03 \x01(\x08\x12\r\n\x05\x65rror\x18\x04 \x01(\x08\x12\x15\n\rerror_message\x18\x05 \x01(\t*\xd3\x01\n\x06\x42utton\x12\x05\n\x01\x41\x10\x00\x12\x05\n\x01\x42\x10\x01\x12\x05\n\x01X\x10\x02\x12\x05\n\x01Y\x10\x03\x12\x05\n\x01L\x10\x04\x12\x05\n\x01R\x10\x05\x12\x06\n\x02ZL\x10\x06\x12\x06\n\x02ZR\x10\x07\x12\x0b\n\x07L_STICK\x10\x08\x12\x0b\n\x07R_STICK\x10\t\x12\x08\n\x04PLUS\x10\n\x12\t\n\x05MINUS\x10\x0b\x12\x08\n\x04HOME\x10\x0c\x12\x0b\n\x07\x43\x41PTURE\x10\r\x12\x0b\n\x07\x44PAD_UP\x10\x0e\x12\r\n\tDPAD_DOWN\x10\x0f\x12\r\n\tDPAD_LEFT\x10\x10\x12\x0e\n\nDPAD_RIGHT\x10\x11\x12\x06\n\x02SL\x10\x12\x12\x06\n\x02SR\x10\x13*\x17\n\x05Stick\x12\x06\n\x02LS\x10\x00\x12\x06\n\x02RS\x10\x01\x32\xe7\x04\n\x0cNsController\x12J\n\x05\x43lick\x12\x1e.ns_controller.pb.ClickRequest\x1a!.ns_controller.pb.ControllerState\x12J\n\x05Press\x12\x1e.ns_controller.pb.PressRequest\x1a!.ns_controller.pb.ControllerState\x12N\n\x07Release\x12 .ns_controller.pb.ReleaseRequest\x1a!.ns_controller.pb.ControllerState\x12M\n\x08SetStick\x12\x1e.ns_controller.pb.StickRequest\x1a!.ns_controller.pb.ControllerState\x12P\n\x08SetState\x12!.ns_controller.pb.ControllerState\x1a!.ns_controller.pb.ControllerState\x12\x45\n\x08GetState\x12\x16.google.protobuf.Empty\x1a!.ns_controller.pb.ControllerState\x12\x42\n\x05\x43lear\x12\x16.google.protobuf.Empty\x1a!.ns_controller.pb.ControllerState\x12\x43\n\x08RunMacro\x12\x17.ns_controller.pb.Macro\x1a\x1c.ns_controller.pb.MacroEvent0\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13ns_controller.proto\x12\x10ns_controller.pb\x1a\x1bgoogle/protobuf/empty.proto\" \n\x08Position\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\"r\n\x0f\x43ontrollerState\x12\x0f\n\x07\x62uttons\x18\x01 \x01(\x04\x12&\n\x02ls\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position\x12&\n\x02rs\x18\x03 \x01(\x0b\x32\x1a.ns_controller.pb.Position\"K\n\x0c\x43lickRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x10\n\x08\x64uration\x18\x02 \x01(\x02\"9\n\x0cPressRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\";\n\x0eReleaseRequest\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\"d\n\x0cStickRequest\x12&\n\x05stick\x18\x01 \x01(\x0e\x32\x17.ns_controller.pb.Stick\x12,\n\x08position\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position\"u\n\x0b\x43lickAction\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x0f\n\x07\x64own_ms\x18\x02 \x01(\r\x12\x0e\n\x06gap_ms\x18\x03 \x01(\r\x12\x11\n\x04mark\x18\x04 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_mark\"\x8a\x01\n\x11RepeatClickAction\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\r\n\x05\x63ount\x18\x02 \x01(\r\x12\x0f\n\x07\x64own_ms\x18\x03 \x01(\r\x12\x0e\n\x06gap_ms\x18\x04 \x01(\r\x12\x11\n\x04mark\x18\x05 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_mark\"h\n\nHoldAction\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x13\n\x0b\x64uration_ms\x18\x02 \x01(\r\x12\x11\n\x04mark\x18\x03 \x01(\tH\x00\x88\x01\x01\x42\x07\n\x05_mark\"!\n\nWaitAction\x12\x13\n\x0b\x64uration_ms\x18\x01 \x01(\r\"a\n\nSpamAction\x12)\n\x07\x62uttons\x18\x01 \x03(\x0e\x32\x18.ns_controller.pb.Button\x12\x13\n\x0b\x64uration_ms\x18\x02 \x01(\r\x12\x13\n\x0binterval_ms\x18\x03 \x01(\r\"\x1d\n\rSetMarkAction\x12\x0c\n\x04name\x18\x01 \x01(\t\"2\n\x0fWaitUntilAction\x12\x0c\n\x04mark\x18\x01 \x01(\t\x12\x11\n\toffset_ms\x18\x02 \x01(\r\"{\n\x0eSetStickAction\x12&\n\x05stick\x18\x01 \x01(\x0e\x32\x17.ns_controller.pb.Stick\x12,\n\x08position\x18\x02 \x01(\x0b\x32\x1a.ns_controller.pb.Position\x12\x13\n\x0b\x64uration_ms\x18\x03 \x01(\r\"\xb3\x03\n\x0bMacroAction\x12.\n\x05\x63lick\x18\x01 \x01(\x0b\x32\x1d.ns_controller.pb.ClickActionH\x00\x12,\n\x04hold\x18\x02 \x01(\x0b\x32\x1c.ns_controller.pb.HoldActionH\x00\x12,\n\x04wait\x18\x03 \x01(\x0b\x32\x1c.ns_controller.pb.WaitActionH\x00\x12,\n\x04spam\x18\x04 \x01(\x0b\x32\x1c.ns_controller.pb.SpamActionH\x00\x12\x33\n\x08set_mark\x18\x05 \x01(\x0b\x32\x1f.ns_controller.pb.SetMarkActionH\x00\x12\x37\n\nwait_until\x18\x06 \x01(\x0b\x32!.ns_controller.pb.WaitUntilActionH\x00\x12\x35\n\tset_stick\x18\x07 \x01(\x0b\x32 .ns_controller.pb.SetStickActionH\x00\x12;\n\x0crepeat_click\x18\x08 \x01(\x0b\x32#.ns_controller.pb.RepeatClickActionH\x00\x42\x08\n\x06\x61\x63tion\"7\n\x05Macro\x12.\n\x07\x61\x63tions\x18\x01 \x03(\x0b\x32\x1d.ns_controller.pb.MacroAction\"p\n\nMacroEvent\x12\x14\n\x0c\x61\x63tion_index\x18\x01 \x01(\r\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x11\n\tcompleted\x18\x03 \x01(\x08\x12\r\n\x05\x65rror\x18\x04 \x01(\x08\x12\x15\n\rerror_message\x18\x05 \x01(\t*\xd3\x01\n\x06\x42utton\x12\x05\n\x01\x41\x10\x00\x12\x05\n\x01\x42\x10\x01\x12\x05\n\x01X\x10\x02\x12\x05\n\x01Y\x10\x03\x12\x05\n\x01L\x10\x04\x12\x05\n\x01R\x10\x05\x12\x06\n\x02ZL\x10\x06\x12\x06\n\x02ZR\x10\x07\x12\x0b\n\x07L_STICK\x10\x08\x12\x0b\n\x07R_STICK\x10\t\x12\x08\n\x04PLUS\x10\n\x12\t\n\x05MINUS\x10\x0b\x12\x08\n\x04HOME\x10\x0c\x12\x0b\n\x07\x43\x41PTURE\x10\r\x12\x0b\n\x07\x44PAD_UP\x10\x0e\x12\r\n\tDPAD_DOWN\x10\x0f\x12\r\n\tDPAD_LEFT\x10\x10\x12\x0e\n\nDPAD_RIGHT\x10\x11\x12\x06\n\x02SL\x10\x12\x12\x06\n\x02SR\x10\x13*\x17\n\x05Stick\x12\x06\n\x02LS\x10\x00\x12\x06\n\x02RS\x10\x01\x32\xe7\x04\n\x0cNsController\x12J\n\x05\x43lick\x12\x1e.ns_controller.pb.ClickRequest\x1a!.ns_controller.pb.ControllerState\x12J\n\x05Press\x12\x1e.ns_controller.pb.PressRequest\x1a!.ns_controller.pb.ControllerState\x12N\n\x07Release\x12 .ns_controller.pb.ReleaseRequest\x1a!.ns_controller.pb.ControllerState\x12M\n\x08SetStick\x12\x1e.ns_controller.pb.StickRequest\x1a!.ns_controller.pb.ControllerState\x12P\n\x08SetState\x12!.ns_controller.pb.ControllerState\x1a!.ns_controller.pb.ControllerState\x12\x45\n\x08GetState\x12\x16.google.protobuf.Empty\x1a!.ns_controller.pb.ControllerState\x12\x42\n\x05\x43lear\x12\x16.google.protobuf.Empty\x1a!.ns_controller.pb.ControllerState\x12\x43\n\x08RunMacro\x12\x17.ns_controller.pb.Macro\x1a\x1c.ns_controller.pb.MacroEvent0\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ns_controller_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_BUTTON']._serialized_start=1651
-  _globals['_BUTTON']._serialized_end=1862
-  _globals['_STICK']._serialized_start=1864
-  _globals['_STICK']._serialized_end=1887
+  _globals['_BUTTON']._serialized_start=1837
+  _globals['_BUTTON']._serialized_end=2048
+  _globals['_STICK']._serialized_start=2050
+  _globals['_STICK']._serialized_end=2073
   _globals['_POSITION']._serialized_start=70
   _globals['_POSITION']._serialized_end=102
   _globals['_CONTROLLERSTATE']._serialized_start=104
@@ -48,26 +48,28 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_RELEASEREQUEST']._serialized_end=415
   _globals['_STICKREQUEST']._serialized_start=417
   _globals['_STICKREQUEST']._serialized_end=517
-  _globals['_CLICKACTION']._serialized_start=520
-  _globals['_CLICKACTION']._serialized_end=652
-  _globals['_HOLDACTION']._serialized_start=654
-  _globals['_HOLDACTION']._serialized_end=758
-  _globals['_WAITACTION']._serialized_start=760
-  _globals['_WAITACTION']._serialized_end=793
-  _globals['_SPAMACTION']._serialized_start=795
-  _globals['_SPAMACTION']._serialized_end=892
-  _globals['_SETMARKACTION']._serialized_start=894
-  _globals['_SETMARKACTION']._serialized_end=923
-  _globals['_WAITUNTILACTION']._serialized_start=925
-  _globals['_WAITUNTILACTION']._serialized_end=975
-  _globals['_SETSTICKACTION']._serialized_start=977
-  _globals['_SETSTICKACTION']._serialized_end=1100
-  _globals['_MACROACTION']._serialized_start=1103
-  _globals['_MACROACTION']._serialized_end=1477
-  _globals['_MACRO']._serialized_start=1479
-  _globals['_MACRO']._serialized_end=1534
-  _globals['_MACROEVENT']._serialized_start=1536
-  _globals['_MACROEVENT']._serialized_end=1648
-  _globals['_NSCONTROLLER']._serialized_start=1890
-  _globals['_NSCONTROLLER']._serialized_end=2505
+  _globals['_CLICKACTION']._serialized_start=519
+  _globals['_CLICKACTION']._serialized_end=636
+  _globals['_REPEATCLICKACTION']._serialized_start=639
+  _globals['_REPEATCLICKACTION']._serialized_end=777
+  _globals['_HOLDACTION']._serialized_start=779
+  _globals['_HOLDACTION']._serialized_end=883
+  _globals['_WAITACTION']._serialized_start=885
+  _globals['_WAITACTION']._serialized_end=918
+  _globals['_SPAMACTION']._serialized_start=920
+  _globals['_SPAMACTION']._serialized_end=1017
+  _globals['_SETMARKACTION']._serialized_start=1019
+  _globals['_SETMARKACTION']._serialized_end=1048
+  _globals['_WAITUNTILACTION']._serialized_start=1050
+  _globals['_WAITUNTILACTION']._serialized_end=1100
+  _globals['_SETSTICKACTION']._serialized_start=1102
+  _globals['_SETSTICKACTION']._serialized_end=1225
+  _globals['_MACROACTION']._serialized_start=1228
+  _globals['_MACROACTION']._serialized_end=1663
+  _globals['_MACRO']._serialized_start=1665
+  _globals['_MACRO']._serialized_end=1720
+  _globals['_MACROEVENT']._serialized_start=1722
+  _globals['_MACROEVENT']._serialized_end=1834
+  _globals['_NSCONTROLLER']._serialized_start=2076
+  _globals['_NSCONTROLLER']._serialized_end=2691
 # @@protoc_insertion_point(module_scope)

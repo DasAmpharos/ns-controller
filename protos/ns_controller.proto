@@ -76,9 +76,16 @@ message StickRequest {
 
 message ClickAction {
   repeated Button buttons = 1;
-  uint32 count = 2;            // repeat count (0 or 1 = single click)
-  uint32 down_ms = 3;          // hold duration per click (default 100)
-  uint32 gap_ms = 4;           // gap between clicks (default 100)
+  uint32 down_ms = 2;          // hold duration (default 100ms)
+  uint32 gap_ms = 3;           // gap after release (default 100ms)
+  optional string mark = 4;   // if set, record a time mark at the press
+}
+
+message RepeatClickAction {
+  repeated Button buttons = 1;
+  uint32 count = 2;            // number of clicks
+  uint32 down_ms = 3;          // hold duration per click (default 100ms)
+  uint32 gap_ms = 4;           // gap between clicks (default 100ms)
   optional string mark = 5;   // if set, record a time mark at the first press
 }
 
@@ -122,6 +129,7 @@ message MacroAction {
     SetMarkAction set_mark = 5;
     WaitUntilAction wait_until = 6;
     SetStickAction set_stick = 7;
+    RepeatClickAction repeat_click = 8;
   }
 }
 
