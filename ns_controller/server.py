@@ -1,6 +1,5 @@
 import threading
 from concurrent import futures
-from queue import Queue
 from typing import Final
 
 import click
@@ -60,31 +59,16 @@ class NsControllerServicerImpl(NsControllerServicer):
         cancel = threading.Event()
         context.add_callback(cancel.set)
 
-        # Run the executor in its own thread so macro timing is never blocked
-        # by gRPC flushing events to the client. Events are buffered in a queue
-        # and streamed to the client independently. None is used as a sentinel.
-        queue: Queue = Queue()
-
         def run_executor():
-            try:
-                for event in MacroExecutor(request, self.state, cancel).execute():
-                    logger.info(f"[macro] action={event.action_index} {event.description}")
-                    queue.put(event)
-            finally:
-                queue.put(None)
+            for event in MacroExecutor(request, self.state, cancel).execute():
+                logger.info(f"[macro] action={event.action_index} {event.description}")
 
         logger.info(f"Starting macro with {len(request.actions)} actions")
-        threading.Thread(target=run_executor, daemon=True).start()
-
-        while True:
-            event = queue.get()
-            if event is None:
-                break
-            if not context.is_active():
-                cancel.set()
-                break
-            yield event
+        thread = threading.Thread(target=run_executor, daemon=True)
+        thread.start()
+        thread.join()
         logger.info("Macro execution finished")
+        return iter([])
 
 
 @click.command()
