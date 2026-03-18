@@ -1,3 +1,5 @@
+import sys
+
 import click
 
 from ns_controller.client import MacroBuilder, NsControllerClient
@@ -16,7 +18,12 @@ GBA_FRAME_MS = 1000 / GBA_FRAMERATE
 @click.command()
 @click.option("--host", default="[::]", show_default=True, help="Server host")
 @click.option("--port", default=DEFAULT_PORT, show_default=True, type=int, help="Server port")
-def main(host: str, port: int) -> None:
+@click.option("--log-level", default="INFO", show_default=True,
+              type=click.Choice(["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"], case_sensitive=False),
+              help="Logging level.")
+def main(host: str, port: int, log_level: str) -> None:
+    logger.remove()
+    logger.add(sys.stderr, level=log_level.upper(), enqueue=True)
     macro = (
         MacroBuilder()
         .click(Button.HOME)

@@ -117,9 +117,6 @@ class Controller:
         data = bytes([ack, cmd]) + buf + bytes(62 - len(buf))
         try:
             self.fp.write(data)
-            logger.debug(f"write: {data.hex()}")
-            if ack == 0x30:
-                logger.debug(f"input report: {self.get_input_buffer().hex()}")
         except Exception as e:
             logger.error(f"Failed to write to device: {e}")
             raise

@@ -1,3 +1,4 @@
+import sys
 import threading
 from concurrent import futures
 from typing import Final
@@ -77,7 +78,12 @@ class NsControllerServicerImpl(NsControllerServicer):
 @click.option("--port", type=int, default=DEFAULT_PORT, help="The port to listen on.")
 @click.option("--mock", is_flag=True, default=False, help="Run in mock mode (no HID device).")
 @click.option("--gamepad", type=str, default=None, help="Path to evdev gamepad device (e.g. /dev/input/event0).")
-def cli(hid_path: str, host: str, port: int, mock: bool, gamepad: str | None):
+@click.option("--log-level", default="INFO", show_default=True,
+              type=click.Choice(["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"], case_sensitive=False),
+              help="Logging level.")
+def cli(hid_path: str, host: str, port: int, mock: bool, gamepad: str | None, log_level: str):
+    logger.remove()
+    logger.add(sys.stderr, level=log_level.upper(), enqueue=True)
     server = main(hid_path, host, port, mock=mock, gamepad=gamepad)
     server.wait_for_termination()
 
