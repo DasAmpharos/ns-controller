@@ -124,6 +124,11 @@ class NsControllerClient:
         """
         yield from self.transport.run_macro(macro)
 
+    def exec_macro(self, macro: Macro) -> None:
+        """Run a macro and block until it completes, discarding events."""
+        for _ in self.transport.run_macro(macro):
+            pass
+
 
 class MacroBuilder:
     """Fluent builder for constructing Macro protobuf messages.
@@ -245,3 +250,6 @@ class MacroBuilder:
 
     def build(self) -> Macro:
         return Macro(actions=self._actions)
+
+# Alias kept for scripts that use this name — NsControllerClient works over any transport.
+NsControllerGrpcClient = NsControllerClient

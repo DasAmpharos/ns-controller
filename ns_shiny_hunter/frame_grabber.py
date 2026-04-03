@@ -1,5 +1,6 @@
 import sys
 import threading
+import time
 from typing import Final
 
 import cv2
@@ -30,8 +31,8 @@ class FrameGrabber:
         self.video_capture_thread: Final = threading.Thread(target=self.run)
         self.running: threading.Event = threading.Event()
 
-        # self._frame_lock: Final = threading.Lock()
-        self.frame: Frame | None = None
+        self._frame_lock: Final = threading.Lock()
+        self._frame: Frame | None = None
 
     @classmethod
     def create_video_capture(cls, source: int | str) -> cv2.VideoCapture:
@@ -68,12 +69,26 @@ class FrameGrabber:
                     if key == ord('q'):
                         self.running.clear()
                         break
-                self.frame = frame
+                with self._frame_lock:
+                    self._frame = frame
         finally:
             self.video_capture.release()
 
+    @property
+    def frame(self) -> Frame | None:
+        with self._frame_lock:
+            return self._frame
 
-    # @property
-    # def frame(self) -> Frame | None:
-    #     with self._frame_lock:
-    #         return self._frame
+    def get_frame(self) -> Frame | None:
+        """Thread-safe access to the most recent frame."""
+        return self.frame
+
+    def wait_for_frame(self, timeout: float = 5.0) -> Frame | None:
+        """Block until a frame is available, or until timeout seconds elapse."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            f = self.frame
+            if f is not None:
+                return f
+            time.sleep(0.016)
+        return None

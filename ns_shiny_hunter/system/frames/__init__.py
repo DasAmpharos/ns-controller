@@ -1,7 +1,7 @@
 import pathlib
 from typing import Final
 
-from ns_shiny_hunter.frame import ReferenceFrameEnum, ReferenceFrames, FrameProcessors
+from ns_shiny_hunter.frame import FrameProcessors, ReferenceFrameEnum, ReferenceFrames
 
 FILEPATH: Final = pathlib.Path(__file__)
 FRAMES_DIR: Final = FILEPATH.parent

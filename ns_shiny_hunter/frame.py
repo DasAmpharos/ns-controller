@@ -1,5 +1,6 @@
 import pathlib
-from enum import IntEnum, auto, Enum
+from dataclasses import dataclass
+from enum import Enum, IntEnum, auto
 from typing import Any, Final, Protocol, override
 
 import cv2
@@ -318,3 +319,124 @@ class ReferenceFrameEnum(ReferenceFrame, Enum):
 
     def get_percent_match(self, frame: Frame) -> float:
         return self.value.get_percent_match(frame)
+
+
+# ── Compatibility helpers ─────────────────────────────────────────────────────
+# SimpleFrameProcessor / SimpleReferenceFrame / BlurParams / ThresholdParams
+# were part of an earlier API.  They are thin wrappers over the current
+# primitives so that older script-frames files import and run without changes.
+
+
+@dataclass
+class BlurParams:
+    """Parameters for a Gaussian blur step in SimpleFrameProcessor."""
+
+    ksize: tuple[int, int]
+    sigma_x: float = 0.0
+    sigma_y: float = 0.0
+
+
+@dataclass
+class ThresholdParams:
+    """Parameters for an adaptive-threshold step in SimpleFrameProcessor."""
+
+    block_size: int = 11
+    c: float = 2.0
+
+
+class SimpleFrameProcessor:
+    """Convenience processor: crop between two points with optional colour, blur, and threshold steps.
+
+    Usage::
+
+        proc = SimpleFrameProcessor.from_points(
+            p1=(51, 214), p2=(195, 236),
+            blur_params=BlurParams(ksize=(3, 3), sigma_x=0.5),
+        )
+        result = proc.process_frame(frame)
+    """
+
+    def __init__(self, processor: FrameProcessor) -> None:
+        self._processor: Final = processor
+
+    def process_frame(self, frame: Frame) -> Frame:
+        return self._processor.process_frame(frame)
+
+    @classmethod
+    def from_points(
+        cls,
+        p1: tuple[int, int],
+        p2: tuple[int, int],
+        color_space: int | None = None,
+        blur_params: BlurParams | None = None,
+        threshold_params: ThresholdParams | None = None,
+    ) -> "SimpleFrameProcessor":
+        processors: list[FrameProcessor] = [CropPoints(p1, p2)]
+        if color_space is not None:
+            processors.append(CvtColor(color_space))
+        if blur_params is not None:
+            processors.append(GaussianBlur(blur_params.ksize, blur_params.sigma_x, blur_params.sigma_y))
+        if threshold_params is not None:
+            processors.append(AdaptiveThreshold(block_size=threshold_params.block_size, c=threshold_params.c))
+        inner: FrameProcessor = CompositeFrameProcessor(*processors) if len(processors) > 1 else processors[0]
+        return cls(inner)
+
+
+class SimpleReferenceFrame(ReferenceFrame):
+    """Reference frame loaded from a file, with threshold expressed on a 0–100 scale.
+
+    ``threshold=10`` means *at most 10 % of pixels may differ*, i.e. 90 % must match.
+    Equivalent to ``ReferenceFrameTemplate`` with ``threshold = 1 - raw_threshold / 100``.
+    """
+
+    def __init__(self, delegate: ReferenceFrameTemplate) -> None:
+        self._delegate: Final = delegate
+
+    def matches(self, frame: Frame) -> bool:
+        return self._delegate.matches(frame)
+
+    def get_percent_match(self, frame: Frame) -> float:
+        return self._delegate.get_percent_match(frame)
+
+    @classmethod
+    def create_from_file(
+        cls,
+        caller_file: str,
+        filename: str,
+        processor: FrameProcessor,
+        threshold: int = 10,
+    ) -> "SimpleReferenceFrame":
+        """Load a pre-cropped reference image from the same directory as *caller_file*.
+
+        Args:
+            caller_file: Pass ``__file__`` from the calling module.
+            filename:    Image filename (e.g. ``"entrance-1.jpg"``).
+            processor:   Frame processor applied to the *live* frame before comparison.
+                         The stored image must already be in the processed state.
+            threshold:   Max percentage of pixels that may differ (0–100).
+                         Defaults to 10 (→ 90 % match required).
+        """
+        path = pathlib.Path(caller_file).parent / filename
+        return cls.create_from_path(path, processor, threshold)
+
+    @classmethod
+    def create_from_path(
+        cls,
+        path: pathlib.Path | str,
+        processor: FrameProcessor,
+        threshold: int = 10,
+    ) -> "SimpleReferenceFrame":
+        """Load a pre-cropped reference image from an explicit *path*.
+
+        Args:
+            path:      Full path to the reference image.
+            processor: Frame processor applied to the *live* frame before comparison.
+                       The stored image must already be in the processed state.
+            threshold: Max percentage of pixels that may differ (0–100).
+                       Defaults to 10 (→ 90 % match required).
+        """
+        template = cv2.imread(str(path))
+        if template is None:
+            raise FileNotFoundError(f"SimpleReferenceFrame: reference image not found: {path}")
+        pct_threshold = 1.0 - threshold / 100.0
+        return cls(ReferenceFrameTemplate(template, pct_threshold, processor, preprocessed=True))
