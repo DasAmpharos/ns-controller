@@ -8,12 +8,8 @@ from ns_controller.client_transport import NsControllerGrpcTransport, NsControll
 from ns_controller.controller import Controller
 from ns_controller.pb.ns_controller_pb2 import Button
 from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
-from ns_shiny_hunter.bdsp.scripts.ramanas_park import lugia
-from ns_shiny_hunter.bdsp.scripts.ramanas_park.lugia.frames import LugiaReferenceFrames
-from ns_shiny_hunter.bdsp.scripts.ramanas_park.script import RamanasParkScript, ScriptFrames
 from ns_shiny_hunter.frame_grabber import FrameGrabber
-from ns_shiny_hunter.legends_za.scripts.hyperspace.script import HyperspaceScript
-from ns_shiny_hunter.legends_za.scripts.virizion import VirizionScript
+from ns_shiny_hunter.games.swsh.static.script import SwshStaticScript
 
 
 @click.group()
@@ -47,8 +43,8 @@ def native(hid_path: str, source: int, imshow: bool, resets: int) -> None:
 
 
 def run(transport: NsControllerTransport, source: int | str, imshow: bool, resets: int = 0) -> None:
-    with (NsControllerClient(transport) as controller):
-          # FrameGrabber(source, imshow=imshow) as frame_grabber):
+    with (NsControllerClient(transport) as controller,
+          FrameGrabber(source, imshow=imshow) as frame_grabber):
         try:
             pair_controller(controller)
 
@@ -76,13 +72,15 @@ def run(transport: NsControllerTransport, source: int | str, imshow: bool, reset
             # script = HyperspaceScript(frame_grabber, controller, resets=resets)
             # script = DonutResetScript(frame_grabber, client, targets=['Water', 'All Types'], resets=resets)
             # script = TerrakionScript(controller, resets)
-            script = VirizionScript(controller, resets)
+            # script = VirizionScript(controller, resets)
+            script = SwshStaticScript(frame_grabber, controller)
             script.run()
         except Exception as e:
             print(f"An error occurred: {e}")
             traceback.print_exc()
         finally:
-            open_controller_menu(controller)
+            # open_controller_menu(controller)
+            pass
 
 
 def pair_controller(client: NsControllerClient):
