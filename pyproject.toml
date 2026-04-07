@@ -1,36 +1,33 @@
-[tool.poetry]
+[project]
 name = "ns-controller"
 version = "0.1.0"
 description = "Nintendo Switch Pro Controller emulator over USB with TCP server"
-authors = ["Dylan Meadows <dylmeadows@gmail.com>"]
+authors = [
+    {name = "Dylan Meadows", email = "dylmeadows@gmail.com"},
+]
 readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.3.0",
+    "loguru>=0.7.3",
+    "grpcio>=1.76.0",
+    "python-dotenv>=1.2.1",
+    "types-protobuf>=6.32.1.20251210",
+    "evdev>=1.9.3; sys_platform == 'linux'",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-click = "^8.3.0"
-loguru = "^0.7.3"
-grpcio = "^1.76.0"
-requests = "^2.32.5"
-python-dotenv = "^1.2.1"
-opencv-python = "^4.12.0.88"
-pytesseract = "^0.3.13"
-inquirerpy = "^0.3.4"
-pillow = "^11.0.0"
-types-protobuf = "^6.32.1.20251210"
-streamlit = "^1.37"
-streamlit-drawable-canvas = "^0.9.3"
-evdev = "^1.9.3"
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.14.2"
-grpcio-tools = "^1.76.0"
-
-[tool.poetry.scripts]
+[project.scripts]
 ns-controller = "ns_controller.server:cli"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.14.2",
+    "grpcio-tools>=1.76.0",
+]
+
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff]
 target-version = "py311"

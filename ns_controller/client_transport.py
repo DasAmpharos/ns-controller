@@ -31,15 +31,16 @@ class NsControllerNativeTransport(NsControllerTransport):
 
 
 class NsControllerGrpcTransport(NsControllerTransport):
-    def __init__(self, host: str, port: int) -> None:
+    def __init__(self, host: str, port: int, timeout: float = 5.0) -> None:
         self.channel = grpc.insecure_channel(f"{host}:{port}")
         self.stub = NsControllerStub(self.channel)
+        self.timeout = timeout
 
     def send(self, state: ControllerState) -> None:
-        self.stub.SetState(state)
+        self.stub.SetState(state, timeout=self.timeout)
 
     def run_macro(self, macro: Macro) -> Generator[MacroEvent, None, None]:
-        yield from self.stub.RunMacro(macro)
+        yield from self.stub.RunMacro(macro, timeout=self.timeout)
 
     def close(self):
         pass

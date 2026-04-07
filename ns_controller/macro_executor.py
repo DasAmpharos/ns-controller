@@ -8,7 +8,6 @@ from ns_controller.pb.ns_controller_pb2 import (
     Macro,
     MacroAction,
     Position,
-    Stick,
 )
 from ns_controller.state import EnhancedControllerState
 
