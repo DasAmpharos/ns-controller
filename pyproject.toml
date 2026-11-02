@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "ns-controller"
-version = "0.1.0"
-description = "Nintendo Switch Pro Controller emulator over USB with TCP server"
+version = "0.2.0"
+description = "Nintendo Switch Pro Controller scripting client (Go server handles HID)"
 authors = ["Dylan Meadows <dylmeadows@gmail.com>"]
 readme = "README.md"
 
@@ -17,14 +17,10 @@ pytesseract = "^0.3.13"
 inquirerpy = "^0.3.4"
 pillow = "^11.0.0"
 types-protobuf = "^6.32.1.20251210"
-evdev = "^1.9.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.2"
 grpcio-tools = "^1.76.0"
-
-[tool.poetry.scripts]
-ns-controller = "ns_controller.server:cli"
 
 [build-system]
 requires = ["poetry-core"]

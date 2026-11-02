@@ -3,7 +3,6 @@ from typing import Protocol
 
 import grpc
 
-from ns_controller.controller import Controller
 from ns_controller.pb.ns_controller_pb2 import ControllerState, Macro, MacroEvent
 from ns_controller.pb.ns_controller_pb2_grpc import NsControllerStub
 
@@ -14,20 +13,6 @@ class NsControllerTransport(Protocol):
     def run_macro(self, macro: Macro) -> Generator[MacroEvent, None, None]: ...
 
     def close(self): ...
-
-
-class NsControllerNativeTransport(NsControllerTransport):
-    def __init__(self, controller: Controller) -> None:
-        self.controller = controller
-
-    def send(self, state: ControllerState) -> None:
-        self.controller.state.CopyFrom(state)
-
-    def run_macro(self, macro: Macro) -> Generator[MacroEvent, None, None]:
-        raise NotImplementedError("RunMacro is not supported on native transport")
-
-    def close(self):
-        self.controller.close()
 
 
 class NsControllerGrpcTransport(NsControllerTransport):

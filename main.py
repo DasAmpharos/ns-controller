@@ -1,19 +1,14 @@
-import time
 import traceback
 
 import click
 
 from ns_controller.client import NsControllerClient
-from ns_controller.client_transport import NsControllerGrpcTransport, NsControllerNativeTransport, NsControllerTransport
-from ns_controller.controller import Controller
+from ns_controller.client_transport import NsControllerGrpcTransport
 from ns_controller.pb.ns_controller_pb2 import Button
-from ns_controller.server import DEFAULT_HOST, DEFAULT_PORT
-from ns_shiny_hunter.bdsp.scripts.ramanas_park import lugia
-from ns_shiny_hunter.bdsp.scripts.ramanas_park.lugia.frames import LugiaReferenceFrames
-from ns_shiny_hunter.bdsp.scripts.ramanas_park.script import RamanasParkScript, ScriptFrames
-from ns_shiny_hunter.frame_grabber import FrameGrabber
-from ns_shiny_hunter.legends_za.scripts.hyperspace.script import HyperspaceScript
 from ns_shiny_hunter.legends_za.scripts.virizion import VirizionScript
+
+DEFAULT_HOST = "localhost"
+DEFAULT_PORT = 50051
 
 
 @click.group()
@@ -22,33 +17,18 @@ def cli():
 
 
 @cli.command()
-@click.option("--host", default=DEFAULT_HOST, help="Server host")
-@click.option("--port", default=DEFAULT_PORT, type=int, help="Server port")
+@click.option("--host", default=DEFAULT_HOST, help="Go server host")
+@click.option("--port", default=DEFAULT_PORT, type=int, help="Go server port")
 @click.option("--source", type=int, default=0, help="Video source index")
 @click.option("--imshow", is_flag=True, help="Show video window")
 @click.option("--resets", default=0, type=int)
-def grpc(host: str, port: int, source: int, imshow: bool, resets: int) -> None:
+def run(host: str, port: int, source: int, imshow: bool, resets: int) -> None:
     transport = NsControllerGrpcTransport(host, port)
-    run(transport, source, imshow, resets)
+    _run(transport, source, imshow, resets)
 
 
-@cli.command()
-@click.option("--hid-path", default="/dev/hidg0")
-@click.option("--source", type=int, default=0, help="Video source index")
-@click.option("--imshow", is_flag=True, help="Show video window")
-@click.option("--resets", default=0, type=int)
-def native(hid_path: str, source: int, imshow: bool, resets: int) -> None:
-    controller = Controller()
-    controller.connect(hid_path)
-    transport = NsControllerNativeTransport(controller)
-    time.sleep(1.0)
-
-    run(transport, source, imshow, resets)
-
-
-def run(transport: NsControllerTransport, source: int | str, imshow: bool, resets: int = 0) -> None:
-    with (NsControllerClient(transport) as controller):
-          # FrameGrabber(source, imshow=imshow) as frame_grabber):
+def _run(transport, source: int | str, imshow: bool, resets: int = 0) -> None:
+    with NsControllerClient(transport) as controller:
         try:
             pair_controller(controller)
 
