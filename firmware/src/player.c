@@ -20,7 +20,8 @@ bool player_update(player_t *p, uint64_t now_us, procon_input_t *input) {
         return false;
     }
     procon_input_t before = *input;
-    uint64_t elapsed_ms = (now_us - p->start_us) / 1000;
+    // now_us may be a timestamp taken just before player_start(); never let the subtraction wrap around.
+    uint64_t elapsed_ms = now_us > p->start_us ? (now_us - p->start_us) / 1000 : 0;
     while (p->next < p->seq->count && p->seq->frames[p->next].t_ms <= elapsed_ms) {
         const keyframe_t *kf = &p->seq->frames[p->next++];
         input->buttons = kf->buttons;

@@ -55,6 +55,16 @@ static void test_overdue_frames_collapse(void) {
     EXPECT(in.buttons == PROCON_BTN_B && p.next == 3, "latest due keyframe wins");
 }
 
+static void test_clock_slightly_behind_start(void) {
+    // Regression: the main loop reads the clock, then starts a sequence with a later timestamp. An update with
+    // the earlier time used to wrap around and apply every keyframe at once (the sequence "finished" instantly).
+    player_t p;
+    procon_input_t in = {0, 2048, 2048, 2048, 2048};
+    player_start(&p, &k_seq, 1000050);
+    player_update(&p, 1000000, &in);
+    EXPECT(p.running && p.next == 1 && in.buttons == PROCON_BTN_A, "only the t=0 keyframe applied");
+}
+
 static void test_stop_is_neutral(void) {
     player_t p;
     procon_input_t in = {0, 2048, 2048, 2048, 2048};
@@ -120,6 +130,7 @@ static void test_nxbt_demo_sequence(void) {
 int main(void) {
     test_basic_timeline();
     test_overdue_frames_collapse();
+    test_clock_slightly_behind_start();
     test_stop_is_neutral();
     test_input_test_sequence();
     test_nxbt_demo_sequence();
