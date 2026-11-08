@@ -1,11 +1,15 @@
-// Phase 1 hardware spike: enumerate as a wired Pro Controller, complete the Switch handshake,
-// stream input reports, and press A once a second. Logs everything over UART0 (GP0 TX, 115200 8N1).
+// Phase 1 hardware spike: enumerate as a wired Pro Controller, complete the Switch handshake and stream
+// input reports. Press BOOTSEL to play a built-in test sequence (1 press: input test, 2: nxbt demo; any press
+// while one runs stops it). Logs everything over UART0 (GP0 TX, 115200 8N1).
 #include <string.h>
 
+#include "bootsel.h"
 #include "hardware/watchdog.h"
 #include "log.h"
 #include "pico/stdlib.h"
+#include "player.h"
 #include "procon.h"
+#include "sequences.h"
 #include "tusb.h"
 
 #if defined(CYW43_WL_GPIO_LED_PIN)
@@ -13,9 +17,8 @@
 #endif
 
 #define REPORT_INTERVAL_US 8000      // 0x30 keepalive, same as the Python/Go ports
-#define DEMO_START_DELAY_US 3000000  // let the Switch settle after input reports start
-#define DEMO_PERIOD_US 1000000
-#define DEMO_HOLD_US 100000
+#define BUTTON_POLL_US 20000      // BOOTSEL poll period (each poll briefly pauses flash access)
+#define BUTTON_GAP_US 700000      // presses closer together than this count as one multi-press
 #define STATS_INTERVAL_US 10000000
 #define WATCHDOG_MS 1000
 
@@ -28,20 +31,13 @@ static struct {
     uint32_t rx_rumble;
     uint32_t tx_replies;
     uint32_t tx_reports;
-    uint32_t presses;
+    uint32_t sequences;
     uint32_t mounts;
     uint32_t suspends;
 } s_stats;
 
 static inline uint8_t timer_byte(uint64_t now_us) {
     return (uint8_t)(now_us / 5000);  // ticks every 5 ms, like the Python counter thread
-}
-
-static void set_buttons(uint32_t buttons) {
-    if (s_pc.input.buttons != buttons) {
-        s_pc.input.buttons = buttons;
-        s_input_dirty = true;  // send a report now instead of waiting for the keepalive
-    }
 }
 
 // ---- LED -----------------------------------------------------------------------------------------
@@ -74,7 +70,7 @@ static void led_set(bool on) {
 // Blink codes:
 //   fast blink (5 Hz)        not configured by a host
 //   slow blink (1 Hz)        configured, waiting for the Switch to start input reports
-//   solid, off during press  input reports flowing (the demo press blinks it off)
+//   solid, off during press  input reports flowing (blinks off whenever a test presses a button)
 //   short flash every 2 s    USB suspended (console asleep)
 static void led_task(uint64_t now_us) {
     uint32_t ms = (uint32_t)(now_us / 1000);
@@ -178,35 +174,81 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
     procon_handle_output(&s_pc, pkt, len, timer_byte(time_us_64()));
 }
 
-// ---- Demo: press A once a second -----------------------------------------------------------------
+// ---- Test sequences (BOOTSEL) ----------------------------------------------------------------------
 
-static void demo_task(uint64_t now_us) {
-    static bool active;
-    static uint64_t next_press_us;
-    static uint64_t release_us;
+static player_t s_player;
 
-    if (!(s_pc.reports_enabled && tud_ready())) {
-        active = false;
-        set_buttons(0);
+static void sequence_stop(const char *why) {
+    if (s_player.running) {
+        log_printf("test: '%s' stopped (%s)", s_player.seq->name, why);
+    }
+    player_stop(&s_player, &s_pc.input);
+    s_input_dirty = true;
+}
+
+static void on_presses(int count) {
+    if (count < 1 || count > SEQUENCE_COUNT) {
+        log_printf("test: %d presses; use 1-%d:", count, SEQUENCE_COUNT);
+        for (int i = 0; i < SEQUENCE_COUNT; i++) {
+            log_printf("test:   %d = %s", i + 1, SEQUENCES[i].name);
+        }
         return;
     }
-    if (!active) {
-        active = true;
-        next_press_us = now_us + DEMO_START_DELAY_US;
-        log_printf("demo: input reports flowing, pressing A every %d ms from +%d ms", DEMO_PERIOD_US / 1000,
-                   DEMO_START_DELAY_US / 1000);
+    if (!(s_pc.reports_enabled && tud_ready())) {
+        log_printf("test: not connected to a Switch yet (LED should be solid first)");
+        return;
     }
-    if (s_pc.input.buttons && now_us >= release_us) {
-        set_buttons(0);
+    const sequence_t *seq = &SEQUENCES[count - 1];
+    const keyframe_t *last = &seq->frames[seq->count - 1];
+    s_stats.sequences++;
+    log_printf("test: playing '%s' (%u keyframes, %lu.%03lu s)", seq->name, seq->count,
+               (unsigned long)(last->t_ms / 1000), (unsigned long)(last->t_ms % 1000));
+    player_start(&s_player, seq, time_us_64());
+}
+
+static void button_task(uint64_t now_us) {
+    static uint64_t next_poll_us, last_edge_us;
+    static bool was_pressed;
+    static int presses;
+
+    if (now_us < next_poll_us) {
+        return;
     }
-    if (!s_pc.input.buttons && now_us >= next_press_us) {
-        set_buttons(PROCON_BTN_A);
-        release_us = now_us + DEMO_HOLD_US;
-        while (next_press_us <= now_us) {
-            next_press_us += DEMO_PERIOD_US;
+    next_poll_us = now_us + BUTTON_POLL_US;
+    bool pressed = bootsel_pressed();
+    if (pressed != was_pressed) {
+        was_pressed = pressed;
+        last_edge_us = now_us;
+        if (pressed) {
+            if (s_player.running) {
+                sequence_stop("button pressed");
+                presses = -1;  // swallow this press
+            } else if (presses >= 0) {
+                presses++;
+            }
+        } else if (presses < 0) {
+            presses = 0;
         }
-        s_stats.presses++;
-        log_printf("demo: press A #%lu", (unsigned long)s_stats.presses);
+    }
+    if (!pressed && presses > 0 && now_us - last_edge_us > BUTTON_GAP_US) {
+        on_presses(presses);
+        presses = 0;
+    }
+}
+
+static void player_task(uint64_t now_us) {
+    if (!s_player.running) {
+        return;
+    }
+    if (!(s_pc.reports_enabled && tud_ready())) {
+        sequence_stop("connection lost");
+        return;
+    }
+    if (player_update(&s_player, now_us, &s_pc.input)) {
+        s_input_dirty = true;  // send the new state immediately
+    }
+    if (!s_player.running) {
+        log_printf("test: '%s' done", s_player.seq->name);
     }
 }
 
@@ -217,10 +259,10 @@ static void stats_task(uint64_t now_us) {
     }
     next_us += STATS_INTERVAL_US;
     log_printf("stats: mounted=%d suspended=%d reports=%d lights=0x%02x rx=%lu rumble=%lu replies=%lu "
-               "inputs=%lu presses=%lu dropped=%lu",
+               "inputs=%lu tests=%lu dropped=%lu",
                tud_mounted(), tud_suspended(), s_pc.reports_enabled, s_pc.player_lights, (unsigned long)s_stats.rx,
                (unsigned long)s_stats.rx_rumble, (unsigned long)s_stats.tx_replies, (unsigned long)s_stats.tx_reports,
-               (unsigned long)s_stats.presses, (unsigned long)s_pc.txq_dropped);
+               (unsigned long)s_stats.sequences, (unsigned long)s_pc.txq_dropped);
 }
 
 int main(void) {
@@ -233,14 +275,16 @@ int main(void) {
     procon_init(&s_pc);
     tud_init(0);
     watchdog_enable(WATCHDOG_MS, true);
-    log_printf("usb: started, waiting for host");
+    log_printf("usb: started, waiting for host. BOOTSEL: 1 press = %s, 2 = %s", SEQUENCES[0].name,
+               SEQUENCE_COUNT > 1 ? SEQUENCES[1].name : "-");
 
     while (true) {
         uint64_t now_us = time_us_64();
         tud_task();
         usb_tx_task(now_us);
-        demo_task(now_us);
-        usb_tx_task(now_us);  // push a press/release immediately rather than next iteration
+        button_task(now_us);
+        player_task(now_us);
+        usb_tx_task(now_us);  // push a state change immediately rather than next iteration
         led_task(now_us);
         stats_task(now_us);
         log_drain();

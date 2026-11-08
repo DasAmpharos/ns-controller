@@ -1,0 +1,57 @@
+# Every button except HOME and CAPTURE, one at a time, then both sticks in a circle.
+# Run it on a screen where presses are harmless and visible, e.g. System Settings ->
+# Controllers and Sensors -> Test Input Devices -> Test Controller Buttons.
+# B, MINUS and PLUS come last because they may leave the screen.
+1.0s
+A 0.3s
+0.3s
+X 0.3s
+0.3s
+Y 0.3s
+0.3s
+L 0.3s
+0.3s
+R 0.3s
+0.3s
+ZL 0.3s
+0.3s
+ZR 0.3s
+0.3s
+DPAD_UP 0.3s
+0.3s
+DPAD_RIGHT 0.3s
+0.3s
+DPAD_DOWN 0.3s
+0.3s
+DPAD_LEFT 0.3s
+0.3s
+L_STICK_PRESS 0.3s
+0.3s
+R_STICK_PRESS 0.3s
+0.3s
+L R 0.3s
+0.3s
+L_STICK@+000+100 0.4s
+L_STICK@+071+071 0.4s
+L_STICK@+100+000 0.4s
+L_STICK@+071-071 0.4s
+L_STICK@+000-100 0.4s
+L_STICK@-071-071 0.4s
+L_STICK@-100+000 0.4s
+L_STICK@-071+071 0.4s
+0.5s
+R_STICK@+000+100 0.4s
+R_STICK@+071+071 0.4s
+R_STICK@+100+000 0.4s
+R_STICK@+071-071 0.4s
+R_STICK@+000-100 0.4s
+R_STICK@-071-071 0.4s
+R_STICK@-100+000 0.4s
+R_STICK@-071+071 0.4s
+0.5s
+MINUS 0.3s
+0.3s
+PLUS 0.3s
+0.3s
+B 0.3s
+0.5s

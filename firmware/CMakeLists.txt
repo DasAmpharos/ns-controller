@@ -21,13 +21,28 @@ execute_process(
     OUTPUT_VARIABLE GIT_DESCRIBE OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 set(FW_VERSION "0.1.0-spike+${GIT_DESCRIBE}")
 
+# Test sequences: nxbt-format macros compiled to keyframe tables (BOOTSEL press count = file order).
+file(GLOB SEQUENCE_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/sequences/*.txt)
+list(SORT SEQUENCE_FILES)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/sequences.h
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/generated
+    COMMAND Python3::Interpreter ${CMAKE_CURRENT_LIST_DIR}/tools/macro2c.py
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/sequences.h ${SEQUENCE_FILES}
+    DEPENDS ${CMAKE_CURRENT_LIST_DIR}/tools/macro2c.py ${SEQUENCE_FILES}
+    COMMENT "Compiling test sequences")
+
 add_executable(ns_controller_fw
     src/main.c
+    src/bootsel.c
     src/log.c
+    src/player.c
     src/procon.c
     src/procon_data.c
-    src/usb_descriptors.c)
-target_include_directories(ns_controller_fw PRIVATE src)
+    src/usb_descriptors.c
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/sequences.h)
+target_include_directories(ns_controller_fw PRIVATE src ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_compile_definitions(ns_controller_fw PRIVATE FW_VERSION="${FW_VERSION}" PICO_BOARD="${PICO_BOARD}")
 target_compile_options(ns_controller_fw PRIVATE -Wall -Wextra)
 target_link_libraries(ns_controller_fw PRIVATE pico_stdlib hardware_uart hardware_watchdog tinyusb_device)

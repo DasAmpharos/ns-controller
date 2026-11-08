@@ -1,0 +1,52 @@
+# nxbt's demo macro, verbatim (https://github.com/Brikwerk/nxbt, nxbt/cli.py, MIT licence).
+# Start on HOME -> Controllers -> Change Grip/Order. Menu counts assume the Switch 1 layout:
+# it backs out to HOME, opens System Settings -> Controllers and Sensors, opens the stick
+# screen and circles each stick. On a Switch 2 the menus differ and it will wander.
+B 0.1s
+0.5s
+B 0.1s
+0.5s
+B 0.1s
+0.5s
+B 0.1s
+1.5s
+DPAD_RIGHT 0.075s
+0.075s
+A 0.1s
+1.5s
+LOOP 12
+    DPAD_DOWN 0.075s
+    0.075s
+A 0.1s
+0.25s
+DPAD_DOWN 0.93s
+A 0.1s
+0.25s
+L_STICK_PRESS 0.1s
+1.0s
+L_STICK@-100+000 0.75s
+L_STICK@+000+100 0.75s
+L_STICK@+100+000 0.75s
+L_STICK@+000-100 0.75s
+B 0.1s
+0.25s
+R_STICK_PRESS 0.1s
+1.0s
+R_STICK@-100+000 0.75s
+R_STICK@+000+100 0.75s
+R_STICK@+100+000 0.75s
+R_STICK@+000-100 0.75s
+B 0.1s
+0.1s
+B 0.1s
+0.1s
+B 0.1s
+0.1s
+B 0.1s
+0.4s
+DPAD_LEFT 0.1s
+0.1s
+A 0.1s
+1.5s
+A 0.1s
+5.0s
