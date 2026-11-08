@@ -208,7 +208,7 @@ static void on_presses(int count) {
 
 static void button_task(uint64_t now_us) {
     static uint64_t next_poll_us, last_edge_us;
-    static bool was_pressed;
+    static bool was_pressed, warned_stuck;
     static int presses;
 
     if (now_us < next_poll_us) {
@@ -219,6 +219,8 @@ static void button_task(uint64_t now_us) {
     if (pressed != was_pressed) {
         was_pressed = pressed;
         last_edge_us = now_us;
+        warned_stuck = false;
+        log_printf("button: BOOTSEL %s", pressed ? "down" : "up");
         if (pressed) {
             if (s_player.running) {
                 sequence_stop("button pressed");
@@ -230,9 +232,41 @@ static void button_task(uint64_t now_us) {
             presses = 0;
         }
     }
+    if (pressed && !warned_stuck && now_us - last_edge_us > 5000000) {
+        warned_stuck = true;
+        log_printf("button: BOOTSEL has read as held for 5 s; runtime reading may not work on this board. "
+                   "Use the serial keys instead (type ? for help)");
+    }
     if (!pressed && presses > 0 && now_us - last_edge_us > BUTTON_GAP_US) {
         on_presses(presses);
         presses = 0;
+    }
+}
+
+// Serial console keys (Debug Probe terminal): 1-9 start a sequence, s/space stops, ? lists them.
+static void serial_task(void) {
+    int c = log_getc();
+    if (c < 0) {
+        return;
+    }
+    if (c >= '1' && c <= '9') {
+        if (s_player.running) {
+            sequence_stop("new sequence requested");
+        }
+        on_presses(c - '0');
+    } else if (c == 's' || c == ' ') {
+        if (s_player.running) {
+            sequence_stop("stop key");
+        } else {
+            log_printf("test: nothing playing");
+        }
+    } else if (c == '?' || c == 'h') {
+        log_printf("keys: s/space = stop, ? = help");
+        for (int i = 0; i < SEQUENCE_COUNT; i++) {
+            log_printf("keys: %d = %s", i + 1, SEQUENCES[i].name);
+        }
+        log_printf("state: mounted=%d suspended=%d reports=%d playing=%d", tud_mounted(), tud_suspended(),
+                   s_pc.reports_enabled, s_player.running);
     }
 }
 
@@ -272,10 +306,11 @@ int main(void) {
                watchdog_reboot ? " -- rebooted by WATCHDOG" : "");
 
     led_init();
+    log_printf("button: BOOTSEL reads %s at boot", bootsel_pressed() ? "DOWN (unexpected)" : "up");
     procon_init(&s_pc);
     tud_init(0);
     watchdog_enable(WATCHDOG_MS, true);
-    log_printf("usb: started, waiting for host. BOOTSEL: 1 press = %s, 2 = %s", SEQUENCES[0].name,
+    log_printf("usb: started, waiting for host. BOOTSEL presses or serial keys: 1 = %s, 2 = %s", SEQUENCES[0].name,
                SEQUENCE_COUNT > 1 ? SEQUENCES[1].name : "-");
 
     while (true) {
@@ -283,6 +318,7 @@ int main(void) {
         tud_task();
         usb_tx_task(now_us);
         button_task(now_us);
+        serial_task();
         player_task(now_us);
         usb_tx_task(now_us);  // push a state change immediately rather than next iteration
         led_task(now_us);

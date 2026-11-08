@@ -8,3 +8,6 @@ void log_init(void);
 void log_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void log_hex(const char *label, const uint8_t *buf, uint16_t len);
 void log_drain(void);
+
+// Next byte typed on the serial console (UART0 RX, GP1), or -1 if none. Non-blocking.
+int log_getc(void);

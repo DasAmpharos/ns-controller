@@ -93,3 +93,7 @@ void log_drain(void) {
         s_tail++;
     }
 }
+
+int log_getc(void) {
+    return uart_is_readable(LOG_UART) ? uart_getc(LOG_UART) : -1;
+}
