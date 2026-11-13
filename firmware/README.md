@@ -78,6 +78,12 @@ The first line after a hang says `rebooted by WATCHDOG`.
 | Solid | Input reports flowing; blinks off while a test holds a button |
 | Short flash every 2 s | USB suspended (console asleep) |
 
+## Player 1
+
+Single-player games (FireRed/LeafGreen, ...) only read player 1. If your Joy-Cons are connected, the Pico joins as
+player 2 and its presses are ignored even though the log shows them being sent. Fix: HOME -> Controllers -> Change
+Grip/Order, then press L+R on the Pico (`nsctl press L R`) and A to confirm.
+
 ## Console test checklist
 
 Before you start:

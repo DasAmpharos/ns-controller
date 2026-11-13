@@ -136,7 +136,12 @@ class Pico:
     def _read_loop(self) -> None:
         while not self._closed.is_set():
             try:
-                data = self._port.read(256)
+                # read(256) would wait out the whole timeout for a short reply: take one byte (or time out),
+                # then whatever else has already arrived.
+                data = self._port.read(1)
+                waiting = getattr(self._port, "in_waiting", 0)
+                if data and waiting:
+                    data += self._port.read(waiting)
             except Exception as e:  # noqa: BLE001 - serial unplugged etc.
                 logger.error("nsctl: serial read failed: {}", e)
                 time.sleep(0.5)
