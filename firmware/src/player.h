@@ -10,7 +10,7 @@
 #include "procon.h"
 
 typedef struct {
-    uint32_t t_ms;  // offset from the start of the sequence
+    uint32_t t_us;  // offset from the start of the sequence (up to ~71 minutes)
     uint32_t buttons;  // PROCON_BTN_* bits
     uint16_t lx, ly, rx, ry;  // 12-bit stick axes
 } keyframe_t;

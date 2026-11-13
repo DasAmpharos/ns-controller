@@ -1,13 +1,11 @@
-// Non-blocking log over UART. Messages go into a RAM ring buffer; log_drain() pushes bytes
-// to the UART FIFO only while it has space, so logging never stalls USB handling.
+// Log lines go to a sink set by main (LOG frames on the brain link). Formatting never blocks.
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
-void log_init(void);
+typedef void (*log_sink_t)(const char *line, size_t len);
+
+void log_init(log_sink_t sink);
 void log_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void log_hex(const char *label, const uint8_t *buf, uint16_t len);
-void log_drain(void);
-
-// Next byte typed on the serial console (UART0 RX, GP1), or -1 if none. Non-blocking.
-int log_getc(void);

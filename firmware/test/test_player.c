@@ -24,9 +24,9 @@ void procon_log(const char *fmt, ...) {
 
 static const keyframe_t k_frames[] = {
     {0, PROCON_BTN_A, 2048, 2048, 2048, 2048},
-    {100, 0, 2048, 2048, 2048, 2048},
-    {200, PROCON_BTN_B, 4095, 2048, 2048, 2048},
-    {300, 0, 2048, 2048, 2048, 2048},
+    {100000, 0, 2048, 2048, 2048, 2048},
+    {200000, PROCON_BTN_B, 4095, 2048, 2048, 2048},
+    {300000, 0, 2048, 2048, 2048, 2048},
 };
 static const sequence_t k_seq = {"t", k_frames, 4};
 
@@ -123,7 +123,7 @@ static void test_nxbt_demo_sequence(void) {
     EXPECT(strcmp(SEQUENCES[1].name, "nxbt-demo") == 0, "sequence 2 is the nxbt demo");
     EXPECT(presses[16] == 12 + 1, "DPAD_DOWN: LOOP 12 plus one long hold (%d)", presses[16]);
     EXPECT(presses[2] == 9, "B pressed 9 times (%d)", presses[2]);
-    EXPECT(SEQUENCES[1].frames[SEQUENCES[1].count - 1].t_ms == 25130, "25.13 s long");
+    EXPECT(SEQUENCES[1].frames[SEQUENCES[1].count - 1].t_us == 25130000, "25.13 s long");
     EXPECT(end.buttons == 0 && end.lx == 2048, "ends neutral");
 }
 

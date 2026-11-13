@@ -19,7 +19,14 @@ execute_process(
     COMMAND git describe --always --dirty --exclude */*
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     OUTPUT_VARIABLE GIT_DESCRIBE OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-set(FW_VERSION "0.1.0-spike+${GIT_DESCRIBE}")
+set(FW_VERSION "0.2.0+${GIT_DESCRIBE}")
+execute_process(
+    COMMAND git rev-parse --short=7 HEAD
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    OUTPUT_VARIABLE GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if (NOT GIT_HASH)
+    set(GIT_HASH 0)
+endif ()
 
 # Test sequences: nxbt-format macros compiled to keyframe tables (BOOTSEL press count = file order).
 file(GLOB SEQUENCE_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/sequences/*.txt)
@@ -36,16 +43,19 @@ add_custom_command(
 add_executable(ns_controller_fw
     src/main.c
     src/bootsel.c
+    src/link.c
     src/log.c
     src/player.c
     src/procon.c
     src/procon_data.c
+    src/serial.c
     src/usb_descriptors.c
     ${CMAKE_CURRENT_BINARY_DIR}/generated/sequences.h)
 target_include_directories(ns_controller_fw PRIVATE src ${CMAKE_CURRENT_BINARY_DIR}/generated)
-target_compile_definitions(ns_controller_fw PRIVATE FW_VERSION="${FW_VERSION}" PICO_BOARD="${PICO_BOARD}")
+target_compile_definitions(ns_controller_fw PRIVATE FW_VERSION="${FW_VERSION}" FW_HASH=0x${GIT_HASH}
+                           PICO_BOARD="${PICO_BOARD}")
 target_compile_options(ns_controller_fw PRIVATE -Wall -Wextra)
-target_link_libraries(ns_controller_fw PRIVATE pico_stdlib hardware_uart hardware_watchdog tinyusb_device)
+target_link_libraries(ns_controller_fw PRIVATE pico_stdlib pico_bootrom hardware_uart hardware_watchdog tinyusb_device)
 if (PICO_CYW43_SUPPORTED)
     target_link_libraries(ns_controller_fw PRIVATE pico_cyw43_arch_none)
 endif ()

@@ -21,8 +21,8 @@ bool player_update(player_t *p, uint64_t now_us, procon_input_t *input) {
     }
     procon_input_t before = *input;
     // now_us may be a timestamp taken just before player_start(); never let the subtraction wrap around.
-    uint64_t elapsed_ms = now_us > p->start_us ? (now_us - p->start_us) / 1000 : 0;
-    while (p->next < p->seq->count && p->seq->frames[p->next].t_ms <= elapsed_ms) {
+    uint64_t elapsed_us = now_us > p->start_us ? now_us - p->start_us : 0;
+    while (p->next < p->seq->count && p->seq->frames[p->next].t_us <= elapsed_us) {
         const keyframe_t *kf = &p->seq->frames[p->next++];
         input->buttons = kf->buttons;
         input->lx = kf->lx;
@@ -40,6 +40,6 @@ uint64_t player_due_in(const player_t *p, uint64_t now_us) {
     if (!p->running) {
         return UINT64_MAX;
     }
-    uint64_t due = p->start_us + (uint64_t)p->seq->frames[p->next].t_ms * 1000;
+    uint64_t due = p->start_us + p->seq->frames[p->next].t_us;
     return due > now_us ? due - now_us : 0;
 }

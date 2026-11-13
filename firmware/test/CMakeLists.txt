@@ -26,7 +26,13 @@ target_include_directories(test_player PRIVATE ${SRC} ${CMAKE_CURRENT_BINARY_DIR
 target_compile_options(test_player PRIVATE -Wall -Wextra -Werror -fsanitize=address,undefined)
 target_link_options(test_player PRIVATE -fsanitize=address,undefined)
 
+add_executable(test_link test_link.c ${SRC}/link.c ${SRC}/player.c)
+target_include_directories(test_link PRIVATE ${SRC})
+target_compile_options(test_link PRIVATE -Wall -Wextra -Werror -fsanitize=address,undefined)
+target_link_options(test_link PRIVATE -fsanitize=address,undefined)
+
 enable_testing()
 add_test(NAME procon COMMAND test_procon)
 add_test(NAME player COMMAND test_player)
+add_test(NAME link COMMAND test_link)
 add_test(NAME macro2c COMMAND Python3::Interpreter ${CMAKE_CURRENT_LIST_DIR}/test_macro2c.py)

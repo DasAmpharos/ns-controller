@@ -149,7 +149,7 @@ def main(argv: list[str]) -> int:
         parts.append(f"// {path.name}: {len(frames)} keyframes, {frames[-1][0] / 1000:.2f} s")
         parts.append(f"static const keyframe_t {ident}[] = {{")
         for t, (b, lx, ly, rx, ry) in frames:
-            parts.append(f"    {{{t}, 0x{b:06x}, {lx}, {ly}, {rx}, {ry}}},")
+            parts.append(f"    {{{t * 1000}, 0x{b:06x}, {lx}, {ly}, {rx}, {ry}}},")
         parts.append("};")
         parts.append("")
         table.append(f'    {{"{name}", {ident}, {len(frames)}}},')
