@@ -37,3 +37,6 @@ jobs:
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: required
           LOG_LEVEL: info
+          # Commit as Renovate with your GitHub noreply address, not Mend's default
+          # renovate@whitesourcesoftware.com (a Mend-owned account that flags these commits as Unverified).
+          RENOVATE_GIT_AUTHOR: "Renovate <25057051+DasAmpharos@users.noreply.github.com>"
