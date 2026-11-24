@@ -110,6 +110,27 @@ The Streamlit UI provides:
 - Controller logic: `ns_controller/controller.py`
 - Dependencies: fastapi, loguru, click, pydantic
 
+## Dependency updates
+
+Renovate keeps both uv projects (`uv.lock` and `nsctl/uv.lock`), the Pico SDK version in
+`firmware/CMakeLists.txt` and the GitHub Actions pins current, with **no pull requests**. It runs daily from
+`.github/workflows/renovate.yml` and starts updates on Saturdays: routine Python updates share one
+`renovate/...` branch, and releases must be a week old. It merges a branch into `main` itself after CI passes
+there. CI covers nsctl's lint, both locked installs, the firmware host tests, and the firmware built for the
+Pico W and Pico 2 W. An update that fails stays on its branch and shows on the Dependency Dashboard issue.
+Settings are in `renovate.json5`.
+
+A new Pico SDK opens a pull request instead: install that version under `~/.pico-sdk/sdk/` before merging it,
+since the local build looks for the SDK there.
+
+One-time setup: the workflow needs the repository secret `RENOVATE_TOKEN`, a fine-grained personal access
+token (github.com/settings/personal-access-tokens) with access to this repository and **Contents**,
+**Pull requests**, **Issues**, **Commit statuses** and **Workflows** set to *Read and write*. One token
+can serve every repository that runs Renovate (homelab, gmail-cleanup and the others): give it access to
+this one, then `gh secret set RENOVATE_TOKEN --repo DasAmpharos/ns-controller` and run the workflow once from the
+Actions tab. The token expires (at most a year): when the workflow starts failing, make a new one and set it
+again.
+
 ## Contributing
 
 Pull requests and issues are welcome! Please open an issue to discuss major changes.
