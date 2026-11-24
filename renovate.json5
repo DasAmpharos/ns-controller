@@ -1,0 +1,80 @@
+// Renovate keeps both uv projects (the old gRPC server at the root, and nsctl/), the Pico SDK version
+// the firmware builds against, and the GitHub Actions pins current. It runs self-hosted from
+// .github/workflows/renovate.yml (daily, with the RENOVATE_TOKEN secret), and starts updates on
+// Saturdays only.
+//
+// No pull requests: each update goes to a renovate/... branch, CI (nsctl lint, both locked installs,
+// the firmware's host tests, and the firmware built for the Pico W and Pico 2 W) runs there, and Renovate
+// merges it into main itself once CI passes. A failing update stays on its branch and shows on the
+// Dependency Dashboard issue.
+//
+// A new Pico SDK is the exception: it opens a pull request, because your local build only finds the
+// SDK at ~/.pico-sdk/sdk/<version>, so install that version before merging.
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: ['config:recommended', ':semanticCommitsDisabled'],
+  timezone: 'America/New_York',
+
+  enabledManagers: ['pep621', 'github-actions', 'custom.regex'],
+
+  // Branches are created and updated on Saturday mornings; merging waits for CI, at any time.
+  schedule: ['before 6am on saturday'],
+
+  // Let a release age a week first, so early regressions surface before it lands here.
+  minimumReleaseAge: '7 days',
+  internalChecksFilter: 'strict',
+
+  automerge: true,
+  automergeType: 'branch',
+
+  // Weekly refresh of both uv.lock files' transitive dependencies, merged the same way.
+  lockFileMaintenance: {
+    enabled: true,
+    automerge: true,
+    schedule: ['before 6am on saturday'],
+  },
+
+  labels: ['dependencies'],
+
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Pico SDK version the firmware builds against (installed under ~/.pico-sdk/sdk/<version>)',
+      managerFilePatterns: ['/^firmware/CMakeLists\\.txt$/'],
+      matchStrings: ['set\\(PICO_SDK_VERSION (?<currentValue>\\d+\\.\\d+\\.\\d+)\\)'],
+      depNameTemplate: 'raspberrypi/pico-sdk',
+      datasourceTemplate: 'github-releases',
+    },
+    {
+      customType: 'regex',
+      description: 'The Renovate version the workflow runs',
+      managerFilePatterns: ['/^\\.github/workflows/renovate\\.yml$/'],
+      matchStrings: ['renovate-version: (?<currentValue>\\d+\\.\\d+\\.\\d+)'],
+      depNameTemplate: 'ghcr.io/renovatebot/renovate',
+      datasourceTemplate: 'docker',
+    },
+  ],
+
+  packageRules: [
+    {
+      description: 'One branch a week for routine Python updates (both uv projects: the old server and nsctl)',
+      matchManagers: ['pep621'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'Python minor and patch updates',
+    },
+    {
+      description: 'A new Pico SDK: a pull request to merge by hand, once that version is installed locally',
+      matchDepNames: ['raspberrypi/pico-sdk'],
+      automerge: false,
+      prBodyNotes: [
+        'Before merging, install this SDK version under `~/.pico-sdk/sdk/` (the Raspberry Pi Pico VS Code extension does it), or the local firmware build stops finding the SDK.',
+      ],
+    },
+    {
+      description: 'Renovate itself releases daily: one combined update a month for it and its GitHub Action is plenty',
+      matchPackageNames: ['ghcr.io/renovatebot/renovate', 'renovatebot/github-action'],
+      groupName: 'Renovate',
+      schedule: ['* 0-5 1 * *'],
+    },
+  ],
+}

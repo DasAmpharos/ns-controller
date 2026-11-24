@@ -1,0 +1,75 @@
+name: CI
+
+# What a dependency update can break, checked before Renovate merges it (renovate.json5): both uv
+# projects' locked installs, nsctl's lint, the firmware's host tests, and the firmware itself built
+# against the Pico SDK version firmware/CMakeLists.txt names. Nothing here needs a Pico or a console.
+
+on:
+  push:
+    # renovate/** too: Renovate merges an update into main only after CI passes on its branch.
+    branches: [main, "renovate/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+      - name: nsctl
+        working-directory: nsctl
+        run: |
+          uv run --locked ruff check
+          uv run --locked ruff format --check
+          uv run --locked nsctl --help
+      - name: The old gRPC server (grpcio, protobuf and evdev still load)
+        run: |
+          uv run --locked ns-controller --help
+          uv run --locked python -c "import ns_controller.server, ns_controller.client"
+
+  firmware-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Host unit tests
+        working-directory: firmware
+        run: |
+          cmake -S test -B build-test
+          cmake --build build-test -j
+          ctest --test-dir build-test --output-on-failure
+
+  firmware:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [pico_w, pico2_w]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib libusb-1.0-0-dev
+      - name: Pico SDK (the version in firmware/CMakeLists.txt)
+        run: |
+          version=$(sed -n 's/^set(PICO_SDK_VERSION \([0-9.]*\))/\1/p' firmware/CMakeLists.txt)
+          test -n "$version"
+          git clone -q --depth 1 --branch "$version" https://github.com/raspberrypi/pico-sdk "$RUNNER_TEMP/pico-sdk"
+          git -C "$RUNNER_TEMP/pico-sdk" submodule update -q --init --depth 1 \
+            lib/tinyusb lib/cyw43-driver lib/lwip lib/btstack lib/mbedtls
+          echo "PICO_SDK_PATH=$RUNNER_TEMP/pico-sdk" >> "$GITHUB_ENV"
+      - name: Build
+        working-directory: firmware
+        run: |
+          cmake -S . -B build -DPICO_BOARD=${{ matrix.board }}
+          cmake --build build -j
+          test -s build/ns_controller_fw.uf2
