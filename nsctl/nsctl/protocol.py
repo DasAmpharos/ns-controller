@@ -1,4 +1,4 @@
-"""Wire format shared with the firmware (firmware/src/link.h; spec: ns-automation docs/protocol.md).
+"""Wire format shared with the firmware (firmware/src/link.h; spec: docs/protocol.md).
 
 wire: COBS( type:u8 | seq:u8 | payload | crc16:u16le ) | 0x00
 """

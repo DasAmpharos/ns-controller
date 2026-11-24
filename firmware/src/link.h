@@ -1,4 +1,4 @@
-// Brain <-> Pico serial protocol (docs/protocol.md in ns-automation; nsctl implements the brain side).
+// Brain <-> Pico serial protocol (docs/protocol.md; nsctl implements the brain side).
 //
 //   wire: COBS( type:u8 | seq:u8 | payload | crc16:u16le ) | 0x00
 //
