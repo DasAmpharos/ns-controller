@@ -2,7 +2,7 @@
 #   cmake -S . -B build && cmake --build build   ->  build/ns_controller_fw.uf2
 cmake_minimum_required(VERSION 3.13)
 
-set(PICO_SDK_VERSION 2.2.0)
+set(PICO_SDK_VERSION 2.3.1)
 if (NOT PICO_SDK_PATH AND NOT DEFINED ENV{PICO_SDK_PATH} AND EXISTS $ENV{HOME}/.pico-sdk/sdk/${PICO_SDK_VERSION})
     set(PICO_SDK_PATH $ENV{HOME}/.pico-sdk/sdk/${PICO_SDK_VERSION})
 endif ()
